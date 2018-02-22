@@ -65,7 +65,7 @@ func PrintConstraintStatements(metadataFile *utils.FileWithByteCount, toc *utils
 			continue
 		}
 		objStr := "TABLE ONLY"
-		if constraint.IsPartitionParent {
+		if constraint.IsPartitionParent || constraint.TableInherited {
 			objStr = "TABLE"
 		}
 		metadataFile.MustPrintf(alterStr, objStr, constraint.OwningObject, constraint.Name, constraint.ConDef)
