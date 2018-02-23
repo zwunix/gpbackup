@@ -59,12 +59,12 @@ var _ = Describe("backup integration tests", func() {
 	})
 	Describe("GetConstraints", func() {
 		var (
-			uniqueConstraint         = backup.Constraint{Oid: 0, Schema: "public", Name: "uniq2", ConType: "u", ConDef: "UNIQUE (a, b)", OwningObject: "public.constraints_table", IsDomainConstraint: false, IsPartitionParent: false}
-			fkConstraint             = backup.Constraint{Oid: 0, Schema: "public", Name: "fk1", ConType: "f", ConDef: "FOREIGN KEY (b) REFERENCES constraints_table(b)", OwningObject: "public.constraints_other_table", IsDomainConstraint: false, IsPartitionParent: false}
-			pkConstraint             = backup.Constraint{Oid: 0, Schema: "public", Name: "pk1", ConType: "p", ConDef: "PRIMARY KEY (b)", OwningObject: "public.constraints_table", IsDomainConstraint: false, IsPartitionParent: false}
-			checkConstraint          = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (a <> 42)", OwningObject: "public.constraints_table", IsDomainConstraint: false, IsPartitionParent: false}
-			partitionCheckConstraint = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (id <> 0)", OwningObject: "public.part", IsDomainConstraint: false, IsPartitionParent: true}
-			domainConstraint         = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (VALUE <> 42)", OwningObject: "public.constraint_domain", IsDomainConstraint: true, IsPartitionParent: false}
+			uniqueConstraint         = backup.Constraint{Oid: 0, Schema: "public", Name: "uniq2", ConType: "u", ConDef: "UNIQUE (a, b)", OwningObject: "public.constraints_table", IsDomainConstraint: false}
+			fkConstraint             = backup.Constraint{Oid: 0, Schema: "public", Name: "fk1", ConType: "f", ConDef: "FOREIGN KEY (b) REFERENCES constraints_table(b)", OwningObject: "public.constraints_other_table", IsDomainConstraint: false}
+			pkConstraint             = backup.Constraint{Oid: 0, Schema: "public", Name: "pk1", ConType: "p", ConDef: "PRIMARY KEY (b)", OwningObject: "public.constraints_table", IsDomainConstraint: false}
+			checkConstraint          = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (a <> 42)", OwningObject: "public.constraints_table", IsDomainConstraint: false}
+			domainConstraint         = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (VALUE <> 42)", OwningObject: "public.constraint_domain", IsDomainConstraint: true}
+			partitionCheckConstraint = backup.Constraint{Oid: 0, Schema: "public", Name: "check1", ConType: "c", ConDef: "CHECK (id <> 0)", OwningObject: "public.part", IsDomainConstraint: false}
 		)
 		Context("No constraints", func() {
 			It("returns an empty constraint array for a table with no constraints", func() {
@@ -80,7 +80,7 @@ var _ = Describe("backup integration tests", func() {
 			It("returns a constraint array for a table with one UNIQUE constraint and a comment", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT uniq2 ON constraints_table IS 'this is a constraint comment'")
 
 				constraints := backup.GetConstraints(connection)
@@ -91,7 +91,7 @@ var _ = Describe("backup integration tests", func() {
 			It("returns a constraint array for a table with one PRIMARY KEY constraint and a comment", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT pk1 ON constraints_table IS 'this is a constraint comment'")
 
 				constraints := backup.GetConstraints(connection)
@@ -104,8 +104,8 @@ var _ = Describe("backup integration tests", func() {
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table CASCADE")
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_other_table(b text)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_other_table CASCADE")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_other_table ADD CONSTRAINT fk1 FOREIGN KEY (b) REFERENCES constraints_table(b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_other_table ADD CONSTRAINT fk1 FOREIGN KEY (b) REFERENCES constraints_table(b)")
 
 				constraints := backup.GetConstraints(connection)
 
@@ -116,7 +116,7 @@ var _ = Describe("backup integration tests", func() {
 			It("returns a constraint array for a table with one CHECK constraint", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
 
 				constraints := backup.GetConstraints(connection)
 
@@ -151,7 +151,7 @@ PARTITION BY RANGE (date)
 			It("does not return a constraint array for a table that inherits a constraint from another table", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
 
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_child_table(a int, b text, c float) INHERITS (constraints_table)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_child_table")
@@ -168,7 +168,7 @@ PARTITION BY RANGE (date)
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float) INHERITS (parent_table)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
 
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
 
 				constraints := backup.GetConstraints(connection)
 
@@ -178,14 +178,14 @@ PARTITION BY RANGE (date)
 			It("returns a constraint array for a table in a specific schema", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				testhelper.AssertQueryRuns(connection, "CREATE SCHEMA testschema")
 				defer testhelper.AssertQueryRuns(connection, "DROP SCHEMA testschema")
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE testschema.constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE testschema.constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY testschema.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE testschema.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				backup.SetIncludeSchemas([]string{"testschema"})
-				constraintInSchema := backup.Constraint{Oid: 0, Schema: "testschema", Name: "uniq2", ConType: "u", ConDef: "UNIQUE (a, b)", OwningObject: "testschema.constraints_table", IsDomainConstraint: false, IsPartitionParent: false}
+				constraintInSchema := backup.Constraint{Oid: 0, Schema: "testschema", Name: "uniq2", ConType: "u", ConDef: "UNIQUE (a, b)", OwningObject: "testschema.constraints_table", IsDomainConstraint: false}
 
 				constraints := backup.GetConstraints(connection)
 
@@ -195,7 +195,7 @@ PARTITION BY RANGE (date)
 			It("returns a constraint array for only the tables included in the backup set", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE public.constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE public.constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY public.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE public.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT uniq2 ON public.constraints_table IS 'this is a constraint comment'")
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE public.other_table(d bool, e float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE public.other_table")
@@ -214,7 +214,7 @@ PARTITION BY RANGE (date)
 			It("returns a constraint array without contraints on tables in the exclude set", func() {
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE public.constraints_table(a int, b text, c float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE public.constraints_table")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY public.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE public.constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT uniq2 ON public.constraints_table IS 'this is a constraint comment'")
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE public.other_table(d bool, e float)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE public.other_table")
@@ -236,12 +236,12 @@ PARTITION BY RANGE (date)
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_table CASCADE")
 				testhelper.AssertQueryRuns(connection, "CREATE TABLE constraints_other_table(b text)")
 				defer testhelper.AssertQueryRuns(connection, "DROP TABLE constraints_other_table CASCADE")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT uniq2 UNIQUE (a, b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT uniq2 ON constraints_table IS 'this is a constraint comment'")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT pk1 PRIMARY KEY (b)")
 				testhelper.AssertQueryRuns(connection, "COMMENT ON CONSTRAINT pk1 ON constraints_table IS 'this is a constraint comment'")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_other_table ADD CONSTRAINT fk1 FOREIGN KEY (b) REFERENCES constraints_table(b)")
-				testhelper.AssertQueryRuns(connection, "ALTER TABLE ONLY constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_other_table ADD CONSTRAINT fk1 FOREIGN KEY (b) REFERENCES constraints_table(b)")
+				testhelper.AssertQueryRuns(connection, "ALTER TABLE constraints_table ADD CONSTRAINT check1 CHECK (a <> 42)")
 
 				constraints := backup.GetConstraints(connection)
 

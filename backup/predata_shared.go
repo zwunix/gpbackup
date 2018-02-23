@@ -64,10 +64,7 @@ func PrintConstraintStatements(metadataFile *utils.FileWithByteCount, toc *utils
 		if constraint.IsDomainConstraint {
 			continue
 		}
-		objStr := "TABLE ONLY"
-		if constraint.IsPartitionParent || constraint.TableInherited {
-			objStr = "TABLE"
-		}
+		objStr := "TABLE"
 		metadataFile.MustPrintf(alterStr, objStr, constraint.OwningObject, constraint.Name, constraint.ConDef)
 		PrintObjectMetadata(metadataFile, conMetadata[constraint.Oid], constraint.Name, "CONSTRAINT", constraint.OwningObject)
 		toc.AddPredataEntry(constraint.Schema, constraint.Name, "CONSTRAINT", constraint.OwningObject, start, metadataFile)

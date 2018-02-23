@@ -59,8 +59,6 @@ type Constraint struct {
 	ConDef             string
 	OwningObject       string
 	IsDomainConstraint bool
-	IsPartitionParent  bool
-	TableInherited     bool
 }
 
 func GetConstraints(connection *dbconn.DBConn, includeTables ...Relation) []Constraint {
@@ -73,15 +71,7 @@ SELECT
 	contype,
 	pg_get_constraintdef(con.oid, TRUE) AS condef,
 	quote_ident(n.nspname) || '.' || quote_ident(c.relname) AS owningobject,
-	'f' AS isdomainconstraint,
-	CASE
-		WHEN pt.parrelid IS NULL THEN 'f'
-		ELSE 't'
-	END AS ispartitionparent,
-	(SELECT EXISTS
-		(SELECT inhrelid FROM pg_constraint con
-			JOIN pg_class c ON con.conrelid = c.oid
-			JOIN pg_inherits i ON i.inhparent=c.oid)) AS tableinherited
+	'f' AS isdomainconstraint
 FROM pg_constraint con
 LEFT JOIN pg_class c ON con.conrelid = c.oid
 LEFT JOIN pg_partition pt ON con.conrelid = pt.parrelid
@@ -99,9 +89,7 @@ GROUP BY con.oid, conname, contype, c.relname, n.nspname, pt.parrelid`
 	contype,
 	pg_get_constraintdef(con.oid, TRUE) AS condef,
 	quote_ident(n.nspname) || '.' || quote_ident(t.typname) AS owningobject,
-	't' AS isdomainconstraint,
-	'f' AS ispartitionparent,
-	'f' AS tableinherited
+	't' AS isdomainconstraint
 FROM pg_constraint con
 LEFT JOIN pg_type t ON con.contypid = t.oid
 JOIN pg_namespace n ON n.oid = con.connamespace
