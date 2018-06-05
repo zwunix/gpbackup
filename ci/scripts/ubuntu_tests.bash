@@ -43,7 +43,9 @@ function _main() {
     time setup_gpadmin_user
     time make_cluster
 
-    sudo apt-get -y install wget git && wget https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz && tar -xzf go1.10.linux-amd64.tar.gz && sudo mv go /usr/local
+    pushd /tmp
+      apt-get -y install wget git && wget https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz && tar -xzf go1.10.linux-amd64.tar.gz && mv go /usr/local
+    popd
     cat > env.sh <<-ENV_SCRIPT
     export GOPATH=/home/gpadmin/go
     source /usr/local/greenplum-db-devel/greenplum_path.sh
