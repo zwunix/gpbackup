@@ -94,6 +94,21 @@ resources:
       access_key_id: {{gpdb4-bucket-access-key-id}}
       secret_access_key: {{gpdb4-bucket-secret-access-key}}
 
+- name: ubuntu-gpdb-dev-16
+  type: docker-image
+  source:
+    repository: pivotaldata/ubuntu-gpdb-dev
+    tag: '16.04_gcc_6_3'
+
+- name: compiled_bits_ubuntu16
+  type: s3
+  source:
+    access_key_id: {{bucket-access-key-id}}
+    bucket: {{bucket-name}}
+    region_name: {{aws-region}}
+    secret_access_key: {{bucket-secret-access-key}}
+    versioned_file: {{compiled_bits_ubuntu16_versioned_file}}
+
 - name: ccp_src
   type: git
   source:
@@ -466,7 +481,6 @@ jobs:
   ensure:
     <<: *set_failed
 
-
 - name: integrations-master
   plan:
   - aggregate:
@@ -809,6 +823,51 @@ jobs:
         repository: gpdb_release_output
         rebase: true
 
+- name: compile_gpdb_ubuntu16
+  plan:
+  - aggregate:
+    - get: gpdb_src
+    - get: ubuntu-gpdb-dev-16
+  - aggregate:
+    - task: compile_gpdb
+      image: ubuntu-gpdb-dev-16
+      file: gpdb_src/concourse/tasks/compile_gpdb_open_source_ubuntu.yml
+      params:
+        CONFIGURE_FLAGS: {{configure_flags}}
+  - aggregate:
+    - put: compiled_bits_ubuntu16
+      params:
+        file: compiled_bits_ubuntu16/compiled_bits_ubuntu16.tar.gz
+
+
+- name: integrations_ubuntu16
+  plan:
+  - aggregate:
+    - get: gpbackup
+    - get: gpdb_src
+      passed: [compile_gpdb_ubuntu16]
+    - get: compiled_bits_ubuntu16
+      passed: [compile_gpdb_ubuntu16]
+      trigger: true
+    - get: ubuntu-gpdb-dev-16
+  - task: ic_gpdb
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+      image: ubuntu-gpdb-dev-16
+      inputs:
+        - name: gpbackup
+        - name: compiled_bits_ubuntu16
+      outputs:
+      params:
+        MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck-world
+        CONFIGURE_FLAGS: {{configure_flags}}
+        WITH_MIRRORS:
+        TRANSFER_DIR: compiled_bits_ubuntu16
+        COMPILED_BITS_FILENAME: compiled_bits_ubuntu16.tar.gz
+      run:
+        path: gpbackup/scripts/ubuntu_tests.bash
 
 ccp_default_params_anchor: &ccp_default_params
   action: create
