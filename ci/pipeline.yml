@@ -16,7 +16,7 @@ resources:
   type: git
   source:
     uri: https://github.com/greenplum-db/gpbackup
-    branch: master
+    branch: ubuntu_test
 
 - name: gpbackup_s3_plugin
   type: git
@@ -104,10 +104,10 @@ resources:
   type: s3
   source:
     access_key_id: {{bucket-access-key-id}}
-    bucket: {{bucket-name}}
+    bucket: gpdb5-assert-concourse-builds
     region_name: {{aws-region}}
     secret_access_key: {{bucket-secret-access-key}}
-    versioned_file: {{compiled_bits_ubuntu16_versioned_file}}
+    versioned_file: compiled_bits_ubuntu16/compiled_bits_ubuntu16.tar.gz
 
 - name: ccp_src
   type: git
@@ -833,7 +833,7 @@ jobs:
       image: ubuntu-gpdb-dev-16
       file: gpdb_src/concourse/tasks/compile_gpdb_open_source_ubuntu.yml
       params:
-        CONFIGURE_FLAGS: {{configure_flags}}
+        CONFIGURE_FLAGS: "--enable-cassert"
   - aggregate:
     - put: compiled_bits_ubuntu16
       params:
@@ -851,18 +851,16 @@ jobs:
       trigger: true
     - get: ubuntu-gpdb-dev-16
   - task: ic_gpdb
+    image: ubuntu-gpdb-dev-16
     config:
       platform: linux
-      image_resource:
-        type: docker-image
-      image: ubuntu-gpdb-dev-16
       inputs:
         - name: gpbackup
         - name: compiled_bits_ubuntu16
       outputs:
       params:
         MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck-world
-        CONFIGURE_FLAGS: {{configure_flags}}
+        CONFIGURE_FLAGS: "--enable-cassert"
         WITH_MIRRORS:
         TRANSFER_DIR: compiled_bits_ubuntu16
         COMPILED_BITS_FILENAME: compiled_bits_ubuntu16.tar.gz
