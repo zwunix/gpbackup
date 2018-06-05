@@ -850,22 +850,12 @@ jobs:
       passed: [compile_gpdb_ubuntu16]
       trigger: true
     - get: ubuntu-gpdb-dev-16
-  - task: ic_gpdb
+  - task: run-tests
+    file: go/src/github.com/greenplum-db/gpbackup/ci/tasks/ubuntu_tests.yml
     image: ubuntu-gpdb-dev-16
-    config:
-      platform: linux
-      inputs:
-        - name: gpbackup
-        - name: compiled_bits_ubuntu16
-      outputs:
-      params:
-        MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck-world
-        CONFIGURE_FLAGS: "--enable-cassert"
-        WITH_MIRRORS:
-        TRANSFER_DIR: compiled_bits_ubuntu16
-        COMPILED_BITS_FILENAME: compiled_bits_ubuntu16.tar.gz
-      run:
-        path: gpbackup/scripts/ubuntu_tests.bash
+    params:
+      MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck-world
+      CONFIGURE_FLAGS: "--enable-cassert"
 
 ccp_default_params_anchor: &ccp_default_params
   action: create
