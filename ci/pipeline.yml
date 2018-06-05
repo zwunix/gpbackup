@@ -851,7 +851,7 @@ jobs:
       trigger: true
     - get: ubuntu-gpdb-dev-16
   - task: run-tests
-    file: go/src/github.com/greenplum-db/gpbackup/ci/tasks/ubuntu_tests.yml
+    file: gpbackup/ci/tasks/ubuntu_tests.yml
     image: ubuntu-gpdb-dev-16
     params:
       MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck-world

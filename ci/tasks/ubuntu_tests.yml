@@ -4,6 +4,7 @@ image_resource:
 inputs:
   - name: gpbackup
     path: go/src/github.com/greenplum-db/gpbackup
+  - name: gpdb_src
   - name: compiled_bits_ubuntu16
 outputs:
 params:

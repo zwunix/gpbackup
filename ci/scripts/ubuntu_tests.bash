@@ -50,7 +50,7 @@ function _main() {
     export PGPORT=5432
     export MASTER_DATA_DIRECTORY=/data/gpdata/master/gpseg-1
     export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
-    ENV_SCRIPT
+ENV_SCRIPT
 
     export GOPATH=/home/gpadmin/go
     chown gpadmin:gpadmin -R $GOPATH
