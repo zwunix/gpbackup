@@ -52,7 +52,7 @@ EOF
 	chmod a+x /opt/run_test.sh
 }
 
-function run_unit_test() {
+function run_test_script() {
   su - gpadmin -c "bash /opt/run_test.sh $(pwd)"
 }
 
