@@ -37,11 +37,11 @@ function gen_test_script(){
     ROOT_DIR="\${1}"
     SRC_DIR="\${ROOT_DIR}/gpdb_src"
     export GOPATH=\${ROOT_DIR}/go
-    chown gpadmin:gpadmin -R $GOPATH
+    chown gpadmin:gpadmin -R \$GOPATH
     export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
     source ${GREENPLUM_INSTALL_DIR}/greenplum_path.sh
     source \${SRC_DIR}/gpAux/gpdemo/gpdemo-env.sh
-    pushd $GOPATH/src/github.com/greenplum-db/gpbackup
+    pushd \$GOPATH/src/github.com/greenplum-db/gpbackup
         make depend
         make build
         make integration
