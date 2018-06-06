@@ -37,7 +37,6 @@ function gen_test_script(){
     ROOT_DIR="\${1}"
     SRC_DIR="\${ROOT_DIR}/gpdb_src"
     export GOPATH=\${ROOT_DIR}/go
-    chown gpadmin:gpadmin -R \$GOPATH
     export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
     source ${GREENPLUM_INSTALL_DIR}/greenplum_path.sh
     source \${SRC_DIR}/gpAux/gpdemo/gpdemo-env.sh
@@ -66,6 +65,7 @@ function _main() {
     pushd /tmp
       apt-get -y install wget git && wget https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz && tar -xzf go1.10.linux-amd64.tar.gz && mv go /usr/local
     popd
+    chown gpadmin:gpadmin -R `pwd`/go
     time gen_test_script
     time run_test_script
 }
