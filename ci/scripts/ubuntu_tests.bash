@@ -35,15 +35,13 @@ function make_cluster() {
 function gen_test_script(){
   cat > /opt/run_test.sh <<-EOF
     ROOT_DIR="\${1}"
-    RESULT_FILE="/tmp/test_result.log"
     trap look4results ERR
     function look4results() {
-      cat "\${RESULT_FILE}"
       exit 1
     }
 
     SRC_DIR="\${ROOT_DIR}/gpdb_src"
-    export GOPATH=\${ROOT_DIR}/go
+    export GOPATH=/home/gpadmin/go
     export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
     source ${GREENPLUM_INSTALL_DIR}/greenplum_path.sh
     source \${SRC_DIR}/gpAux/gpdemo/gpdemo-env.sh
@@ -53,7 +51,6 @@ function gen_test_script(){
         make integration
         make end_to_end
     popd
-    cat \${RESULT_FILE}
 EOF
 
 	chmod a+x /opt/run_test.sh
@@ -73,7 +70,8 @@ function _main() {
     pushd /tmp
       apt-get -y install wget git && wget https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz && tar -xzf go1.10.linux-amd64.tar.gz && mv go /usr/local
     popd
-    chown gpadmin:gpadmin -R `pwd`/go
+    cp -r go /home/gpadmin/go
+    chown gpadmin:gpadmin -R /home/gpadmin/go
     time gen_test_script
     time run_test_script
 }
