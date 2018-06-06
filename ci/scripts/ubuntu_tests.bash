@@ -35,6 +35,13 @@ function make_cluster() {
 function gen_test_script(){
   cat > /opt/run_test.sh <<-EOF
     ROOT_DIR="\${1}"
+    RESULT_FILE="/tmp/test_result.log"
+    trap look4results ERR
+    function look4results() {
+      cat "\${RESULT_FILE}"
+      exit 1
+    }
+
     SRC_DIR="\${ROOT_DIR}/gpdb_src"
     export GOPATH=\${ROOT_DIR}/go
     export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
@@ -46,6 +53,7 @@ function gen_test_script(){
         make integration
         make end_to_end
     popd
+    cat \${RESULT_FILE}
 EOF
 
 	chmod a+x /opt/run_test.sh
