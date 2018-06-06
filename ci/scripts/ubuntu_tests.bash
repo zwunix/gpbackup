@@ -32,12 +32,32 @@ function make_cluster() {
   popd
 }
 
-function _main() {
-    if [ -z "${MAKE_TEST_COMMAND}" ]; then
-        echo "FATAL: MAKE_TEST_COMMAND is not set"
-        exit 1
-    fi
+function gen_test_script(){
+  cat > /opt/run_test.sh <<-EOF
+    ROOT_DIR="\${1}"
+    SRC_DIR="\${ROOT_DIR}/gpdb_src"
+    export GOPATH=\${ROOT_DIR}/go
+    chown gpadmin:gpadmin -R $GOPATH
+    export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
+    source ${GREENPLUM_INSTALL_DIR}/greenplum_path.sh
+    source \${SRC_DIR}/gpAux/gpdemo/gpdemo-env.sh
+    pushd $GOPATH/src/github.com/greenplum-db/gpbackup
+        make depend
+        make build
+        make integration
+        make end_to_end
+    popd
+EOF
 
+	chmod a+x /opt/run_test.sh
+}
+
+function run_unit_test() {
+  su - gpadmin -c "bash /opt/run_test.sh $(pwd)"
+}
+
+
+function _main() {
     time load_transfered_bits_into_install_dir
     time configure
     time setup_gpadmin_user
@@ -46,27 +66,8 @@ function _main() {
     pushd /tmp
       apt-get -y install wget git && wget https://storage.googleapis.com/golang/go1.10.linux-amd64.tar.gz && tar -xzf go1.10.linux-amd64.tar.gz && mv go /usr/local
     popd
-    cat > env.sh <<-ENV_SCRIPT
-    export GOPATH=/home/gpadmin/go
-    source /usr/local/greenplum-db-devel/greenplum_path.sh
-    export PGPORT=5432
-    export MASTER_DATA_DIRECTORY=/data/gpdata/master/gpseg-1
-    export PATH=\$GOPATH/bin:/usr/local/go/bin:\$PATH
-ENV_SCRIPT
-
-    export GOPATH=/home/gpadmin/go
-    chown gpadmin:gpadmin -R $GOPATH
-    chmod +x env.sh
-    source env.sh
-    gpconfig --skipvalidation -c fsync -v off
-    gpstop -u
-
-    pushd $GOPATH/src/github.com/greenplum-db/gpbackup
-        make depend
-        make build
-        make integration
-        make end_to_end
-    popd
+    time gen_test_script
+    time run_test_script
 }
 
 _main "$@"
