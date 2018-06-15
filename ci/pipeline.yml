@@ -281,10 +281,11 @@ jobs:
     tags: ["ddboost"]
     params:
       <<: *ccp_default_params
-      terraform_source: ccp_src/aws-pivotal-pa-toolsmiths/
+      terraform_source: ccp_src/aws-pivotal-pa-toolsmiths-nvme/
       vars:
-        aws_instance-node-instance_type: t2.medium
+        aws_instance-node-instance_type: i3.2xlarge
         PLATFORM: centos6
+        number_of_nodes: 3
   - task: gen_cluster
     params:
       <<: *ddboost_ccp_gen_cluster_default_params
@@ -342,7 +343,6 @@ jobs:
           ssh -t centos@mdw "bash /tmp/install_dependencies.bash"
     on_failure:
       do:
-      - *slack_alert
       - *ddboost_debug_sleep
   - task: boostfs_installation
     tags: ["ddboost"]
@@ -441,12 +441,8 @@ jobs:
           chmod +x /tmp/run_tests.bash
           scp /tmp/run_tests.bash mdw:/home/gpadmin/run_tests.bash
           ssh -t mdw "bash /home/gpadmin/run_tests.bash"
-    on_failure:
-      do:
-      - *slack_alert
-      - *ddboost_debug_sleep
   ensure:
-      <<: *ddboost_ccp_destroy
+      <<: *ddboost_debug_sleep
 
 - name: integrations-GPDB5-sles
   plan:
@@ -883,7 +879,7 @@ ddboost_ccp_destroy_anchor: &ddboost_ccp_destroy
   params:
     action: destroy
     env_name_file: ddboost_terraform/name
-    terraform_source: ccp_src/aws-pivotal-pa-toolsmiths/
+    terraform_source: ccp_src/aws-pivotal-pa-toolsmiths-nvme/
     vars:
       aws_instance-node-instance_type: t2.micro #t2.micro is ignored in destroy, but aws_instance-node-instance_type is required.
   get_params:
@@ -926,7 +922,7 @@ ddboost_debug_sleep_anchor: &ddboost_debug_sleep
         tag: latest
     run:
       path: 'sh'
-      args: ['-c', 'sleep 2h']
+      args: ['-c', 'sleep 30h']
   ensure:
     <<: *ddboost_ccp_destroy
 
