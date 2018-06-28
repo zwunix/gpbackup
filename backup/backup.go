@@ -10,6 +10,7 @@ import (
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
 	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/spf13/cobra"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
 /*
@@ -89,24 +90,25 @@ func DoSetup() {
 
 func DoBackup() {
 	LogBackupInfo()
+	ddl.InitializeDDLInfo(connectionPool, globalTOC, *includeRelations, *excludeRelations, *includeSchemas, *excludeSchemas, *leafPartitionData)
 
 	objectCounts = make(map[string]int, 0)
 
-	metadataTables, dataTables, tableDefs := RetrieveAndProcessTables()
+	metadataTables, dataTables, tableDefs := ddl.RetrieveAndProcessTables()
 	CheckTablesContainData(dataTables, tableDefs)
 	metadataFilename := globalFPInfo.GetMetadataFilePath()
 	gplog.Info("Metadata will be written to %s", metadataFilename)
 	metadataFile := utils.NewFileWithByteCountFromFile(metadataFilename)
 
-	BackupSessionGUCs(metadataFile)
+	ddl.BackupSessionGUCs(metadataFile)
 	if !*dataOnly {
 		if len(*includeRelations) > 0 {
-			backupRelationPredata(metadataFile, metadataTables, tableDefs)
+			ddl.BackupRelationPredata(connectionPool, metadataFile, metadataTables, tableDefs)
 		} else {
-			backupGlobal(metadataFile)
-			backupPredata(metadataFile, metadataTables, tableDefs)
+			ddl.BackupGlobal(connectionPool, metadataFile)
+			ddl.BackupPredata(connectionPool, metadataFile, metadataTables, tableDefs)
 		}
-		backupPostdata(metadataFile)
+		ddl.BackupPostdata(metadataFile)
 		BackupIncrementalMetadata()
 	}
 
@@ -137,121 +139,7 @@ func DoBackup() {
 	}
 }
 
-func backupGlobal(metadataFile *utils.FileWithByteCount) {
-	gplog.Info("Writing global database metadata")
-
-	BackupTablespaces(metadataFile)
-	BackupCreateDatabase(metadataFile)
-	BackupDatabaseGUCs(metadataFile)
-
-	if len(*includeSchemas) == 0 {
-		BackupResourceQueues(metadataFile)
-		if connectionPool.Version.AtLeast("5") {
-			BackupResourceGroups(metadataFile)
-		}
-		BackupRoles(metadataFile)
-		BackupRoleGrants(metadataFile)
-	}
-	if wasTerminated {
-		gplog.Info("Global database metadata backup incomplete")
-	} else {
-		gplog.Info("Global database metadata backup complete")
-	}
-}
-
-func backupPredata(metadataFile *utils.FileWithByteCount, tables []Relation, tableDefs map[uint32]TableDefinition) {
-	if wasTerminated {
-		return
-	}
-	gplog.Info("Writing pre-data metadata")
-
-	BackupSchemas(metadataFile)
-	if len(*includeSchemas) == 0 && connectionPool.Version.AtLeast("5") {
-		BackupExtensions(metadataFile)
-	}
-
-	if connectionPool.Version.AtLeast("6") {
-		BackupCollations(metadataFile)
-	}
-	procLangs := GetProceduralLanguages(connectionPool)
-	langFuncs, otherFuncs, functionMetadata := RetrieveFunctions(procLangs)
-	types, typeMetadata, funcInfoMap := RetrieveTypes()
-
-	if len(*includeSchemas) == 0 {
-		BackupProceduralLanguages(metadataFile, procLangs, langFuncs, functionMetadata, funcInfoMap)
-	}
-
-	BackupShellTypes(metadataFile, types)
-	if connectionPool.Version.AtLeast("5") {
-		BackupEnumTypes(metadataFile, typeMetadata)
-	}
-
-	relationMetadata := GetMetadataForObjectType(connectionPool, TYPE_RELATION)
-	sequences, sequenceOwnerColumns := RetrieveSequences()
-	BackupCreateSequences(metadataFile, sequences, relationMetadata)
-
-	constraints, conMetadata := RetrieveConstraints()
-
-	BackupFunctionsAndTypesAndTables(metadataFile, otherFuncs, types, tables, functionMetadata, typeMetadata, relationMetadata, tableDefs, constraints)
-	PrintAlterSequenceStatements(metadataFile, globalTOC, sequences, sequenceOwnerColumns)
-
-	if len(*includeSchemas) == 0 {
-		BackupProtocols(metadataFile, funcInfoMap)
-		if connectionPool.Version.AtLeast("6") {
-			BackupForeignDataWrappers(metadataFile, funcInfoMap)
-			BackupForeignServers(metadataFile)
-			BackupUserMappings(metadataFile)
-		}
-	}
-
-	if connectionPool.Version.AtLeast("5") {
-		BackupTSParsers(metadataFile)
-		BackupTSTemplates(metadataFile)
-		BackupTSDictionaries(metadataFile)
-		BackupTSConfigurations(metadataFile)
-	}
-
-	BackupOperators(metadataFile)
-	if connectionPool.Version.AtLeast("5") {
-		BackupOperatorFamilies(metadataFile)
-	}
-	BackupOperatorClasses(metadataFile)
-
-	BackupConversions(metadataFile)
-	BackupAggregates(metadataFile, funcInfoMap)
-	BackupCasts(metadataFile)
-	BackupViews(metadataFile, relationMetadata)
-	BackupConstraints(metadataFile, constraints, conMetadata)
-	if wasTerminated {
-		gplog.Info("Pre-data metadata backup incomplete")
-	} else {
-		gplog.Info("Pre-data metadata backup complete")
-	}
-}
-
-func backupRelationPredata(metadataFile *utils.FileWithByteCount, tables []Relation, tableDefs map[uint32]TableDefinition) {
-	if wasTerminated {
-		return
-	}
-	gplog.Info("Writing table metadata")
-
-	relationMetadata := GetMetadataForObjectType(connectionPool, TYPE_RELATION)
-
-	sequences, sequenceOwnerColumns := RetrieveSequences()
-	BackupCreateSequences(metadataFile, sequences, relationMetadata)
-
-	constraints, conMetadata := RetrieveConstraints(tables...)
-
-	BackupTables(metadataFile, tables, relationMetadata, tableDefs, constraints)
-	PrintAlterSequenceStatements(metadataFile, globalTOC, sequences, sequenceOwnerColumns)
-
-	BackupViews(metadataFile, relationMetadata)
-
-	BackupConstraints(metadataFile, constraints, conMetadata)
-	gplog.Info("Table metadata backup complete")
-}
-
-func backupData(tables []Relation, tableDefs map[uint32]TableDefinition) {
+func backupData(tables []ddl.Relation, tableDefs map[uint32]ddl.TableDefinition) {
 	if *singleDataFile {
 		gplog.Verbose("Initializing pipes and gpbackup_helper on segments for single data file backup")
 		utils.VerifyHelperVersionOnSegments(version, globalCluster)
@@ -281,23 +169,7 @@ func backupData(tables []Relation, tableDefs map[uint32]TableDefinition) {
 	}
 }
 
-func backupPostdata(metadataFile *utils.FileWithByteCount) {
-	if wasTerminated {
-		return
-	}
-	gplog.Info("Writing post-data metadata")
-
-	BackupIndexes(metadataFile)
-	BackupRules(metadataFile)
-	BackupTriggers(metadataFile)
-	if wasTerminated {
-		gplog.Info("Post-data metadata backup incomplete")
-	} else {
-		gplog.Info("Post-data metadata backup complete")
-	}
-}
-
-func backupStatistics(tables []Relation) {
+func backupStatistics(tables []ddl.Relation) {
 	if wasTerminated {
 		return
 	}

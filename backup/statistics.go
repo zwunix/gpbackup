@@ -11,9 +11,10 @@ import (
 
 	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/lib/pq"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
-func PrintStatisticsStatements(statisticsFile *utils.FileWithByteCount, toc *utils.TOC, tables []Relation, attStats map[uint32][]AttributeStatistic, tupleStats map[uint32]TupleStatistic) {
+func PrintStatisticsStatements(statisticsFile *utils.FileWithByteCount, toc *utils.TOC, tables []ddl.Relation, attStats map[uint32][]AttributeStatistic, tupleStats map[uint32]TupleStatistic) {
 	start := statisticsFile.ByteCount
 	statisticsFile.MustPrintf(`SET allow_system_table_mods="DML";`)
 	toc.AddStatisticsEntry("", "", "STATISTICS GUC", start, statisticsFile)
@@ -22,7 +23,7 @@ func PrintStatisticsStatements(statisticsFile *utils.FileWithByteCount, toc *uti
 	}
 }
 
-func PrintStatisticsStatementsForTable(statisticsFile *utils.FileWithByteCount, toc *utils.TOC, table Relation, attStats []AttributeStatistic, tupleStat TupleStatistic) {
+func PrintStatisticsStatementsForTable(statisticsFile *utils.FileWithByteCount, toc *utils.TOC, table ddl.Relation, attStats []AttributeStatistic, tupleStat TupleStatistic) {
 	start := statisticsFile.ByteCount
 	tupleQuery := GenerateTupleStatisticsQuery(table, tupleStat)
 	statisticsFile.MustPrintf("\n\n%s\n", tupleQuery)
@@ -33,7 +34,7 @@ func PrintStatisticsStatementsForTable(statisticsFile *utils.FileWithByteCount, 
 	toc.AddStatisticsEntry(table.Schema, table.Name, "STATISTICS", start, statisticsFile)
 }
 
-func GenerateTupleStatisticsQuery(table Relation, tupleStat TupleStatistic) string {
+func GenerateTupleStatisticsQuery(table ddl.Relation, tupleStat TupleStatistic) string {
 	tupleQuery := `UPDATE pg_class
 SET
 	relpages = %d::int,
@@ -48,7 +49,7 @@ AND relnamespace = %d;`
 		table.SchemaOid)
 }
 
-func GenerateAttributeStatisticsQuery(table Relation, attStat AttributeStatistic) string {
+func GenerateAttributeStatisticsQuery(table ddl.Relation, attStat AttributeStatistic) string {
 	/*
 	 * When restoring statistics to a new database, we cannot determine what the
 	 * new OID for a given object will be, so we need to perform an explicit cast

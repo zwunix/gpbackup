@@ -14,13 +14,14 @@ import (
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
 	"github.com/greenplum-db/gpbackup/utils"
 	"gopkg.in/cheggaaa/pb.v1"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
 var (
 	tableDelim = ","
 )
 
-func ConstructTableAttributesList(columnDefs []ColumnDefinition) string {
+func ConstructTableAttributesList(columnDefs []ddl.ColumnDefinition) string {
 	names := make([]string, 0)
 	for _, col := range columnDefs {
 		names = append(names, col.Name)
@@ -31,7 +32,7 @@ func ConstructTableAttributesList(columnDefs []ColumnDefinition) string {
 	return ""
 }
 
-func AddTableDataEntriesToTOC(tables []Relation, tableDefs map[uint32]TableDefinition, rowsCopiedMaps []map[uint32]int64) {
+func AddTableDataEntriesToTOC(tables []ddl.Relation, tableDefs map[uint32]ddl.TableDefinition, rowsCopiedMaps []map[uint32]int64) {
 	for _, table := range tables {
 		if !tableDefs[table.Oid].IsExternal {
 			var rowsCopied int64
@@ -54,7 +55,7 @@ type BackupProgressCounters struct {
 	ProgressBar    utils.ProgressBar
 }
 
-func CopyTableOut(connectionPool *dbconn.DBConn, table Relation, backupFile string, connNum int) int64 {
+func CopyTableOut(connectionPool *dbconn.DBConn, table ddl.Relation, backupFile string, connNum int) int64 {
 	usingCompression, compressionProgram := utils.GetCompressionParameters()
 	copyCommand := ""
 	if *singleDataFile {
@@ -85,7 +86,7 @@ func CopyTableOut(connectionPool *dbconn.DBConn, table Relation, backupFile stri
 	return numRows
 }
 
-func BackupSingleTableData(tableDef TableDefinition, table Relation, rowsCopiedMap map[uint32]int64, counters *BackupProgressCounters, whichConn int) {
+func BackupSingleTableData(tableDef ddl.TableDefinition, table ddl.Relation, rowsCopiedMap map[uint32]int64, counters *BackupProgressCounters, whichConn int) {
 	if !tableDef.IsExternal {
 		counters.mutex.Lock()
 		counters.NumRegTables++
@@ -112,7 +113,7 @@ func BackupSingleTableData(tableDef TableDefinition, table Relation, rowsCopiedM
 	}
 }
 
-func BackupDataForAllTables(tables []Relation, tableDefs map[uint32]TableDefinition) []map[uint32]int64 {
+func BackupDataForAllTables(tables []ddl.Relation, tableDefs map[uint32]ddl.TableDefinition) []map[uint32]int64 {
 	var totalExtTables int64
 	for _, table := range tables {
 		if tableDefs[table.Oid].IsExternal {
@@ -128,7 +129,7 @@ func BackupDataForAllTables(tables []Relation, tableDefs map[uint32]TableDefinit
 	 * TerminateHangingCopySessions to kill any COPY statements
 	 * in progress if they don't finish on their own.
 	 */
-	tasks := make(chan Relation, len(tables))
+	tasks := make(chan ddl.Relation, len(tables))
 	var workerPool sync.WaitGroup
 	for connNum := 0; connNum < connectionPool.NumConns; connNum++ {
 		rowsCopiedMaps[connNum] = make(map[uint32]int64, 0)
@@ -168,7 +169,7 @@ func printDataBackupWarnings(numExtTables int64) {
 	}
 }
 
-func CheckTablesContainData(tables []Relation, tableDefs map[uint32]TableDefinition) {
+func CheckTablesContainData(tables []ddl.Relation, tableDefs map[uint32]ddl.TableDefinition) {
 	if !backupReport.MetadataOnly {
 		for _, table := range tables {
 			if !tableDefs[table.Oid].IsExternal {

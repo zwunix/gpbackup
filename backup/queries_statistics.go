@@ -12,6 +12,7 @@ import (
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
 	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/lib/pq"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
 type AttributeStatistic struct {
@@ -44,7 +45,7 @@ type AttributeStatistic struct {
 	Values4      pq.StringArray `db:"stavalues4"`
 }
 
-func GetAttributeStatistics(connection *dbconn.DBConn, tables []Relation) map[uint32][]AttributeStatistic {
+func GetAttributeStatistics(connection *dbconn.DBConn, tables []ddl.Relation) map[uint32][]AttributeStatistic {
 	inheritClause := ""
 	if connection.Version.AtLeast("6") {
 		inheritClause = "s.stainherit,"
@@ -89,7 +90,7 @@ JOIN pg_statistic s ON (c.oid = s.starelid AND a.attnum = s.staattnum)
 JOIN pg_type t ON a.atttypid = t.oid
 WHERE %s
 AND quote_ident(n.nspname) || '.' || quote_ident(c.relname) IN (%s)
-ORDER BY n.nspname, c.relname, a.attnum;`, inheritClause, SchemaFilterClause("n"), utils.SliceToQuotedString(tablenames))
+ORDER BY n.nspname, c.relname, a.attnum;`, inheritClause, ddl.SchemaFilterClause("n"), utils.SliceToQuotedString(tablenames))
 
 	results := make([]AttributeStatistic, 0)
 	err := connection.Select(&results, query)
@@ -109,7 +110,7 @@ type TupleStatistic struct {
 	RelTuples float64
 }
 
-func GetTupleStatistics(connection *dbconn.DBConn, tables []Relation) map[uint32]TupleStatistic {
+func GetTupleStatistics(connection *dbconn.DBConn, tables []ddl.Relation) map[uint32]TupleStatistic {
 	tablenames := make([]string, 0)
 	for _, table := range tables {
 		tablenames = append(tablenames, table.ToString())
@@ -125,7 +126,7 @@ FROM pg_class c
 JOIN pg_namespace n ON c.relnamespace = n.oid
 WHERE %s
 AND quote_ident(n.nspname) || '.' || quote_ident(c.relname) IN (%s)
-ORDER BY n.nspname, c.relname;`, SchemaFilterClause("n"), utils.SliceToQuotedString(tablenames))
+ORDER BY n.nspname, c.relname;`, ddl.SchemaFilterClause("n"), utils.SliceToQuotedString(tablenames))
 
 	results := make([]TupleStatistic, 0)
 	err := connection.Select(&results, query)

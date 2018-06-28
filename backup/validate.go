@@ -8,6 +8,7 @@ import (
 	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
 /*
@@ -59,7 +60,7 @@ WHERE quote_ident(n.nspname) || '.' || quote_ident(c.relname) IN (%s)`, quotedTa
 			tableMap[table.Name] = table.Oid
 		}
 
-		partTableMap := GetPartitionTableMap(connection)
+		partTableMap := ddl.GetPartitionTableMap(connection)
 		for _, table := range tableList {
 			tableOid := tableMap[table]
 			if tableOid == 0 {

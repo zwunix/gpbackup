@@ -19,6 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+	"github.com/greenplum-db/gpbackup/ddl"
 )
 
 /*
@@ -37,7 +38,7 @@ func CreateAndConnectMockDB(numConns int) (*dbconn.DBConn, sqlmock.Sqlmock) {
 	SetDBVersion(connection, "5.1.0")
 	backup.SetConnection(connection)
 	restore.SetConnection(connection)
-	backup.InitializeMetadataParams(connection)
+	ddl.InitializeMetadataParams(connection)
 	return connection, mock
 }
 
@@ -59,10 +60,10 @@ func SetDefaultSegmentConfiguration() *cluster.Cluster {
 }
 
 // objType should be an all-caps string like TABLE, INDEX, etc.
-func DefaultMetadataMap(objType string, hasPrivileges bool, hasOwner bool, hasComment bool) backup.MetadataMap {
-	privileges := []backup.ACL{}
+func DefaultMetadataMap(objType string, hasPrivileges bool, hasOwner bool, hasComment bool) ddl.MetadataMap {
+	privileges := []ddl.ACL{}
 	if hasPrivileges {
-		privileges = []backup.ACL{DefaultACLForType("testrole", objType)}
+		privileges = []ddl.ACL{DefaultACLForType("testrole", objType)}
 	}
 	owner := ""
 	if hasOwner {
@@ -77,13 +78,13 @@ func DefaultMetadataMap(objType string, hasPrivileges bool, hasOwner bool, hasCo
 		}
 		comment = fmt.Sprintf("This is a%s %s comment.", n, strings.ToLower(objType))
 	}
-	return backup.MetadataMap{
+	return ddl.MetadataMap{
 		1: {Privileges: privileges, Owner: owner, Comment: comment},
 	}
 }
 
-func DefaultACLForType(grantee string, objType string) backup.ACL {
-	return backup.ACL{
+func DefaultACLForType(grantee string, objType string) ddl.ACL {
+	return ddl.ACL{
 		Grantee:    grantee,
 		Select:     objType == "PROTOCOL" || objType == "SEQUENCE" || objType == "TABLE" || objType == "VIEW",
 		Insert:     objType == "PROTOCOL" || objType == "TABLE" || objType == "VIEW",
@@ -100,8 +101,8 @@ func DefaultACLForType(grantee string, objType string) backup.ACL {
 	}
 }
 
-func DefaultACLForTypeWithGrant(grantee string, objType string) backup.ACL {
-	return backup.ACL{
+func DefaultACLForTypeWithGrant(grantee string, objType string) ddl.ACL {
+	return ddl.ACL{
 		Grantee:             grantee,
 		SelectWithGrant:     objType == "PROTOCOL" || objType == "SEQUENCE" || objType == "TABLE" || objType == "VIEW",
 		InsertWithGrant:     objType == "PROTOCOL" || objType == "TABLE" || objType == "VIEW",
@@ -118,7 +119,7 @@ func DefaultACLForTypeWithGrant(grantee string, objType string) backup.ACL {
 	}
 }
 
-func DefaultACLWithout(grantee string, objType string, revoke ...string) backup.ACL {
+func DefaultACLWithout(grantee string, objType string, revoke ...string) ddl.ACL {
 	defaultACL := DefaultACLForType(grantee, objType)
 	for _, priv := range revoke {
 		switch priv {
@@ -151,7 +152,7 @@ func DefaultACLWithout(grantee string, objType string, revoke ...string) backup.
 	return defaultACL
 }
 
-func DefaultACLWithGrantWithout(grantee string, objType string, revoke ...string) backup.ACL {
+func DefaultACLWithGrantWithout(grantee string, objType string, revoke ...string) ddl.ACL {
 	defaultACL := DefaultACLForTypeWithGrant(grantee, objType)
 	for _, priv := range revoke {
 		switch priv {
@@ -184,8 +185,8 @@ func DefaultACLWithGrantWithout(grantee string, objType string, revoke ...string
 	return defaultACL
 }
 
-func DefaultTypeDefinition(typeType string, typeName string) backup.Type {
-	return backup.Type{Oid: 1, Schema: "public", Name: typeName, Type: typeType, Input: "", Output: "", Receive: "", Send: "", ModIn: "", ModOut: "", InternalLength: -1, IsPassedByValue: false, Alignment: "c", Storage: "p", DefaultVal: "", Element: "", Category: "U", Preferred: false, Delimiter: "", EnumLabels: "", BaseType: "", NotNull: false, Attributes: nil, DependsUpon: nil}
+func DefaultTypeDefinition(typeType string, typeName string) ddl.Type {
+	return ddl.Type{Oid: 1, Schema: "public", Name: typeName, Type: typeType, Input: "", Output: "", Receive: "", Send: "", ModIn: "", ModOut: "", InternalLength: -1, IsPassedByValue: false, Alignment: "c", Storage: "p", DefaultVal: "", Element: "", Category: "U", Preferred: false, Delimiter: "", EnumLabels: "", BaseType: "", NotNull: false, Attributes: nil, DependsUpon: nil}
 }
 
 /*
@@ -290,7 +291,7 @@ func OidFromCast(connection *dbconn.DBConn, castSource uint32, castTarget uint32
 	return result.Oid
 }
 
-func OidFromObjectName(connection *dbconn.DBConn, schemaName string, objectName string, params backup.MetadataQueryParams) uint32 {
+func OidFromObjectName(connection *dbconn.DBConn, schemaName string, objectName string, params ddl.MetadataQueryParams) uint32 {
 	catalogTable := params.CatalogTable
 	if params.OidTable != "" {
 		catalogTable = params.OidTable
