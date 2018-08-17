@@ -22,6 +22,7 @@ func initializeFlags(cmd *cobra.Command) {
 	SetFlagDefaults(cmd.Flags())
 
 	_ = cmd.MarkFlagRequired(utils.DBNAME)
+	_ = cmd.MarkFlagFilename(utils.PLUGIN_CONFIG, "yaml", "yml")
 
 	cmdFlags = cmd.Flags()
 }

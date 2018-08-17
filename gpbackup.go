@@ -3,10 +3,7 @@
 package main
 
 import (
-	"os"
-
 	. "github.com/greenplum-db/gpbackup/backup"
-	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -22,9 +19,6 @@ func main() {
 			DoSetup()
 			DoBackup()
 		}}
-	rootCmd.SetArgs(utils.HandleSingleDashes(os.Args[1:]))
 	DoInit(rootCmd)
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(2)
-	}
+	rootCmd.GenBashCompletionFile("/tmp/gpbackup_bash_comp")
 }
