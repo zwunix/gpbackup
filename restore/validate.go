@@ -170,9 +170,6 @@ END AS string;`, utils.EscapeSingleQuotes(unquotedDBName))
 }
 
 func ValidateBackupFlagCombinations() {
-	if backupConfig.SingleDataFile && MustGetFlagInt(utils.JOBS) != 1 {
-		gplog.Fatal(errors.Errorf("Cannot use jobs flag when restoring backups with a single data file per segment."), "")
-	}
 	if (backupConfig.IncludeTableFiltered || backupConfig.DataOnly) && MustGetFlagBool(utils.WITH_GLOBALS) {
 		gplog.Fatal(errors.Errorf("Global metadata is not backed up in table-filtered or data-only backups."), "")
 	}

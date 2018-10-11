@@ -298,14 +298,14 @@ func backupData(tables []Relation, tableDefs map[uint32]TableDefinition) {
 				oidList = append(oidList, fmt.Sprintf("%d", table.Oid))
 			}
 		}
-		utils.WriteOidListToSegments(oidList, globalCluster, globalFPInfo)
+		utils.WriteOidListToSegments(oidList, globalCluster, globalFPInfo, 0)
 		utils.CreateFirstSegmentPipeOnAllHosts(oidList[0], globalCluster, globalFPInfo)
 		compressStr := fmt.Sprintf(" --compression-level %d", MustGetFlagInt(utils.COMPRESSION_LEVEL))
 		if MustGetFlagBool(utils.NO_COMPRESSION) {
 			compressStr = " --compression-level 0"
 		}
 		utils.StartAgent(globalCluster, globalFPInfo, "--backup-agent",
-			MustGetFlagString(utils.PLUGIN_CONFIG), compressStr)
+			MustGetFlagString(utils.PLUGIN_CONFIG), compressStr, 0)
 	}
 	gplog.Info("Writing data to file")
 	rowsCopiedMaps := BackupDataForAllTables(tables, tableDefs)

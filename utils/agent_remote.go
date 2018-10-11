@@ -25,10 +25,10 @@ func CreateFirstSegmentPipeOnAllHosts(oid string, c *cluster.Cluster, fpInfo Fil
 	})
 }
 
-func WriteOidListToSegments(oidList []string, c *cluster.Cluster, fpInfo FilePathInfo) {
+func WriteOidListToSegments(oidList []string, c *cluster.Cluster, fpInfo FilePathInfo, jobID int) {
 	oidStr := strings.Join(oidList, "\n")
 	remoteOutput := c.GenerateAndExecuteCommand("Writing filtered oid list to segments", func(contentID int) string {
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, fmt.Sprintf("oid_%d", jobID))
 		return fmt.Sprintf(`echo "%s" > %s`, oidStr, oidFile)
 	}, cluster.ON_SEGMENTS)
 	c.CheckClusterError(remoteOutput, "Unable to write oid list to segments", func(contentID int) string {
@@ -59,10 +59,10 @@ func VerifyHelperVersionOnSegments(version string, c *cluster.Cluster) {
 	}
 }
 
-func StartAgent(c *cluster.Cluster, fpInfo FilePathInfo, operation string, pluginConfigFile string, compressStr string) {
+func StartAgent(c *cluster.Cluster, fpInfo FilePathInfo, operation string, pluginConfigFile string, compressStr string, jobID int) {
 	remoteOutput := c.GenerateAndExecuteCommand("Starting gpbackup_helper agent", func(contentID int) string {
 		tocFile := fpInfo.GetSegmentTOCFilePath(contentID)
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, fmt.Sprintf("oid_%d", jobID))
 		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script")
 		pipeFile := fpInfo.GetSegmentPipeFilePath(contentID)
 		backupFile := fpInfo.GetTableBackupFilePath(contentID, 0, true)
@@ -91,7 +91,7 @@ chmod +x %s; (nohup %s > /dev/null 2>&1 &) &`, scriptFile, gphomePath, gphomePat
 func CleanUpHelperFilesOnAllHosts(c *cluster.Cluster, fpInfo FilePathInfo) {
 	remoteOutput := c.GenerateAndExecuteCommand("Removing oid list and helper script files from segment data directories", func(contentID int) string {
 		errorFile := fmt.Sprintf("%s_error", fpInfo.GetSegmentPipeFilePath(contentID))
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid_*")
 		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script")
 		return fmt.Sprintf("rm -f %s && rm -f %s && rm -f %s", errorFile, oidFile, scriptFile)
 	}, cluster.ON_SEGMENTS)

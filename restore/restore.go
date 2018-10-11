@@ -242,28 +242,42 @@ func restoreDataFromTimestamp(fpInfo utils.FilePathInfo, dataEntries []utils.Mas
 		return
 	}
 
+	//tasks := make(chan utils.MasterDataEntry, len(dataEntries))
+	tasks := make([][]utils.MasterDataEntry, connectionPool.NumConns)
+	filteredOids := make([]string, len(dataEntries))
+	for i, entry := range dataEntries {
+		currJob := i % connectionPool.NumConns
+		filteredOids[i] = fmt.Sprintf("%d", entry.Oid)
+		tasks[currJob] = append(tasks[currJob], entry)
+	}
+
 	if backupConfig.SingleDataFile {
 		gplog.Verbose("Initializing pipes and gpbackup_helper on segments for single data file restore")
 		utils.VerifyHelperVersionOnSegments(version, globalCluster)
-		filteredOids := make([]string, len(dataEntries))
-		for i, entry := range dataEntries {
-			filteredOids[i] = fmt.Sprintf("%d", entry.Oid)
+
+		for jobID := 0; jobID < connectionPool.NumConns; jobID++ {
+			if len(tasks[jobID]) == 0 {
+				continue
+			} //guard against more jobs than tables to restore
+			oidList := make([]string, 0)
+			for _, entry := range tasks[jobID] {
+				oidList = append(oidList, fmt.Sprintf("%d", entry.Oid))
+			}
+			utils.WriteOidListToSegments(oidList, globalCluster, fpInfo, jobID)
+			firstOid := fmt.Sprintf("%d", tasks[jobID][0].Oid)
+			utils.CreateFirstSegmentPipeOnAllHosts(firstOid, globalCluster, fpInfo)
+			if wasTerminated {
+				return
+			}
+			utils.StartAgent(globalCluster, fpInfo, "--restore-agent", MustGetFlagString(utils.PLUGIN_CONFIG), "", jobID)
 		}
-		utils.WriteOidListToSegments(filteredOids, globalCluster, fpInfo)
-		firstOid := fmt.Sprintf("%d", dataEntries[0].Oid)
-		utils.CreateFirstSegmentPipeOnAllHosts(firstOid, globalCluster, fpInfo)
-		if wasTerminated {
-			return
-		}
-		utils.StartAgent(globalCluster, fpInfo, "--restore-agent", MustGetFlagString(utils.PLUGIN_CONFIG), "")
 	}
 	/*
 	 * We break when an interrupt is received and rely on
 	 * TerminateHangingCopySessions to kill any COPY
 	 * statements in progress if they don't finish on their own.
 	 */
-	var tableNum uint32 = 1
-	tasks := make(chan utils.MasterDataEntry, len(dataEntries))
+	var tableNum uint32 = 0
 	var workerPool sync.WaitGroup
 	var fatalErr error
 	var numErrors int32
@@ -272,11 +286,12 @@ func restoreDataFromTimestamp(fpInfo utils.FilePathInfo, dataEntries []utils.Mas
 		go func(whichConn int) {
 			defer workerPool.Done()
 			setGUCsForConnection(gucStatements, whichConn)
-			for entry := range tasks {
+			for _, entry := range tasks[whichConn] {
 				if wasTerminated || fatalErr != nil {
 					dataProgressBar.(*pb.ProgressBar).NotPrint = true
 					return
 				}
+				atomic.AddUint32(&tableNum, 1)
 				err := restoreSingleTableData(&fpInfo, entry, tableNum, len(dataEntries), whichConn)
 				if err != nil {
 					if MustGetFlagBool(utils.ON_ERROR_CONTINUE) {
@@ -286,15 +301,11 @@ func restoreDataFromTimestamp(fpInfo utils.FilePathInfo, dataEntries []utils.Mas
 						fatalErr = err
 					}
 				}
-				atomic.AddUint32(&tableNum, 1)
 				dataProgressBar.Increment()
 			}
 		}(i)
 	}
-	for _, entry := range dataEntries {
-		tasks <- entry
-	}
-	close(tasks)
+
 	workerPool.Wait()
 	if fatalErr != nil {
 		gplog.Fatal(fatalErr, "")
