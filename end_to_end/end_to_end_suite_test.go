@@ -118,8 +118,8 @@ func assertArtifactsCleaned(conn *dbconn.DBConn, timestamp string) {
 	description := "Checking if helper files are cleaned up properly"
 	cleanupFunc := func(contentID int) string {
 		errorFile := fmt.Sprintf("%s_error", fpInfo.GetSegmentPipeFilePath(contentID))
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
-		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script")
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid", "*")
+		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script", "")
 		pipeFile := fpInfo.GetSegmentPipeFilePath(contentID)
 
 		return fmt.Sprintf("! ls %s && ! ls %s && ! ls %s && ! ls %s*", errorFile, oidFile, scriptFile, pipeFile)

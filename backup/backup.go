@@ -292,20 +292,20 @@ func backupData(tables []Relation, tableDefs map[uint32]TableDefinition) {
 	if MustGetFlagBool(utils.SINGLE_DATA_FILE) {
 		gplog.Verbose("Initializing pipes and gpbackup_helper on segments for single data file backup")
 		utils.VerifyHelperVersionOnSegments(version, globalCluster)
-		oidList := make([]string, 0, len(tables))
+		oidLists := make(map[int][]uint32, 0)
 		for _, table := range tables {
 			if !tableDefs[table.Oid].SkipDataBackup() {
-				oidList = append(oidList, fmt.Sprintf("%d", table.Oid))
+				oidLists[0] = append(oidLists[0], table.Oid)
 			}
 		}
-		utils.WriteOidListToSegments(oidList, globalCluster, globalFPInfo, 0)
-		utils.CreateFirstSegmentPipeOnAllHosts(oidList[0], globalCluster, globalFPInfo)
+		utils.WriteOidListToSegments(oidLists, globalCluster, globalFPInfo)
+		utils.CreateFirstSegmentPipeOnAllHosts(oidLists, globalCluster, globalFPInfo)
 		compressStr := fmt.Sprintf(" --compression-level %d", MustGetFlagInt(utils.COMPRESSION_LEVEL))
 		if MustGetFlagBool(utils.NO_COMPRESSION) {
 			compressStr = " --compression-level 0"
 		}
 		utils.StartAgent(globalCluster, globalFPInfo, "--backup-agent",
-			MustGetFlagString(utils.PLUGIN_CONFIG), compressStr, 0)
+			MustGetFlagString(utils.PLUGIN_CONFIG), compressStr)
 	}
 	gplog.Info("Writing data to file")
 	rowsCopiedMaps := BackupDataForAllTables(tables, tableDefs)

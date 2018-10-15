@@ -10,7 +10,7 @@ import (
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
 	"github.com/greenplum-db/gpbackup/utils"
 	"github.com/spf13/cobra"
-	"gopkg.in/cheggaaa/pb.v1"
+	pb "gopkg.in/cheggaaa/pb.v1"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -242,42 +242,32 @@ func restoreDataFromTimestamp(fpInfo utils.FilePathInfo, dataEntries []utils.Mas
 		return
 	}
 
-	//tasks := make(chan utils.MasterDataEntry, len(dataEntries))
-	tasks := make([][]utils.MasterDataEntry, connectionPool.NumConns)
-	filteredOids := make([]string, len(dataEntries))
+	tasks := make(map[int][]utils.MasterDataEntry)
+	oidLists := make(map[int][]uint32)
 	for i, entry := range dataEntries {
 		currJob := i % connectionPool.NumConns
-		filteredOids[i] = fmt.Sprintf("%d", entry.Oid)
 		tasks[currJob] = append(tasks[currJob], entry)
+		oidLists[currJob] = append(oidLists[currJob], entry.Oid)
 	}
+	//TODO: guard against tables to restore < num jobs
 
 	if backupConfig.SingleDataFile {
 		gplog.Verbose("Initializing pipes and gpbackup_helper on segments for single data file restore")
 		utils.VerifyHelperVersionOnSegments(version, globalCluster)
 
-		for jobID := 0; jobID < connectionPool.NumConns; jobID++ {
-			if len(tasks[jobID]) == 0 {
-				continue
-			} //guard against more jobs than tables to restore
-			oidList := make([]string, 0)
-			for _, entry := range tasks[jobID] {
-				oidList = append(oidList, fmt.Sprintf("%d", entry.Oid))
-			}
-			utils.WriteOidListToSegments(oidList, globalCluster, fpInfo, jobID)
-			firstOid := fmt.Sprintf("%d", tasks[jobID][0].Oid)
-			utils.CreateFirstSegmentPipeOnAllHosts(firstOid, globalCluster, fpInfo)
-			if wasTerminated {
-				return
-			}
-			utils.StartAgent(globalCluster, fpInfo, "--restore-agent", MustGetFlagString(utils.PLUGIN_CONFIG), "", jobID)
+		utils.WriteOidListToSegments(oidLists, globalCluster, fpInfo)
+		utils.CreateFirstSegmentPipeOnAllHosts(oidLists, globalCluster, fpInfo)
+		if wasTerminated {
+			return
 		}
+		utils.StartAgent(globalCluster, fpInfo, "--restore-agent", MustGetFlagString(utils.PLUGIN_CONFIG), "")
 	}
 	/*
 	 * We break when an interrupt is received and rely on
 	 * TerminateHangingCopySessions to kill any COPY
 	 * statements in progress if they don't finish on their own.
 	 */
-	var tableNum uint32 = 0
+	var tableNum uint32
 	var workerPool sync.WaitGroup
 	var fatalErr error
 	var numErrors int32

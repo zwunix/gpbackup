@@ -8,28 +8,32 @@ import (
 	"github.com/greenplum-db/gp-common-go-libs/cluster"
 	"github.com/greenplum-db/gp-common-go-libs/gplog"
 	"github.com/greenplum-db/gp-common-go-libs/operating"
+	"gopkg.in/yaml.v2"
 )
 
 /*
  * Functions to run commands on entire cluster during both backup and restore
  */
 
-func CreateFirstSegmentPipeOnAllHosts(oid string, c *cluster.Cluster, fpInfo FilePathInfo) {
-	remoteOutput := c.GenerateAndExecuteCommand("Creating segment data pipes", func(contentID int) string {
-		pipeName := fpInfo.GetSegmentPipeFilePath(contentID)
-		pipeName = fmt.Sprintf("%s_%s", pipeName, oid)
-		return fmt.Sprintf("mkfifo %s", pipeName)
-	}, cluster.ON_SEGMENTS)
-	c.CheckClusterError(remoteOutput, "Unable to create segment data pipes", func(contentID int) string {
-		return "Unable to create segment data pipe"
-	})
+func CreateFirstSegmentPipeOnAllHosts(oidLists map[int][]uint32, c *cluster.Cluster, fpInfo FilePathInfo) {
+	for key := range oidLists {
+		remoteOutput := c.GenerateAndExecuteCommand("Creating segment data pipes", func(contentID int) string {
+			pipeName := fpInfo.GetSegmentPipeFilePath(contentID)
+			pipeName = fmt.Sprintf("%s_%d", pipeName, oidLists[key][0])
+			return fmt.Sprintf("mkfifo %s", pipeName)
+		}, cluster.ON_SEGMENTS)
+		c.CheckClusterError(remoteOutput, "Unable to create segment data pipes", func(contentID int) string {
+			return "Unable to create segment data pipe"
+		})
+	}
 }
 
-func WriteOidListToSegments(oidList []string, c *cluster.Cluster, fpInfo FilePathInfo, jobID int) {
-	oidStr := strings.Join(oidList, "\n")
+func WriteOidListToSegments(oidLists map[int][]uint32, c *cluster.Cluster, fpInfo FilePathInfo) {
+	oidBytes, err := yaml.Marshal(oidLists)
+	gplog.FatalOnError(err)
 	remoteOutput := c.GenerateAndExecuteCommand("Writing filtered oid list to segments", func(contentID int) string {
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, fmt.Sprintf("oid_%d", jobID))
-		return fmt.Sprintf(`echo "%s" > %s`, oidStr, oidFile)
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
+		return fmt.Sprintf(`echo "%s" > %s`, oidBytes, oidFile)
 	}, cluster.ON_SEGMENTS)
 	c.CheckClusterError(remoteOutput, "Unable to write oid list to segments", func(contentID int) string {
 		return fmt.Sprintf("Unable to write oid list for segment %d on host %s", contentID, c.GetHostForContent(contentID))
@@ -59,10 +63,10 @@ func VerifyHelperVersionOnSegments(version string, c *cluster.Cluster) {
 	}
 }
 
-func StartAgent(c *cluster.Cluster, fpInfo FilePathInfo, operation string, pluginConfigFile string, compressStr string, jobID int) {
+func StartAgent(c *cluster.Cluster, fpInfo FilePathInfo, operation string, pluginConfigFile string, compressStr string) {
 	remoteOutput := c.GenerateAndExecuteCommand("Starting gpbackup_helper agent", func(contentID int) string {
 		tocFile := fpInfo.GetSegmentTOCFilePath(contentID)
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, fmt.Sprintf("oid_%d", jobID))
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
 		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script")
 		pipeFile := fpInfo.GetSegmentPipeFilePath(contentID)
 		backupFile := fpInfo.GetTableBackupFilePath(contentID, 0, true)
@@ -91,7 +95,7 @@ chmod +x %s; (nohup %s > /dev/null 2>&1 &) &`, scriptFile, gphomePath, gphomePat
 func CleanUpHelperFilesOnAllHosts(c *cluster.Cluster, fpInfo FilePathInfo) {
 	remoteOutput := c.GenerateAndExecuteCommand("Removing oid list and helper script files from segment data directories", func(contentID int) string {
 		errorFile := fmt.Sprintf("%s_error", fpInfo.GetSegmentPipeFilePath(contentID))
-		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid_*")
+		oidFile := fpInfo.GetSegmentHelperFilePath(contentID, "oid")
 		scriptFile := fpInfo.GetSegmentHelperFilePath(contentID, "script")
 		return fmt.Sprintf("rm -f %s && rm -f %s && rm -f %s", errorFile, oidFile, scriptFile)
 	}, cluster.ON_SEGMENTS)
