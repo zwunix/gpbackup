@@ -364,12 +364,40 @@ var _ = Describe("backup end to end integration tests", func() {
 				BeforeEach(func() {
 					skipIfOldBackupVersionBefore("1.7.0")
 				})
-				It("runs gpbackup and gprestore with plugin, single-data-file, and no-compression", func() {
-					pluginDir := "/tmp/plugin_dest"
+				FIt("runs gpbackup and gprestore with plugin, single-data-file, and no-compression", func() {
+
+					// for now, limit this to restoring to 5 (since archive is from 5)
+					if !(restoreConn.Version.AtLeast("5.0.0") &&
+						restoreConn.Version.Before("6.0.0")) {
+						Fail("cannot run compat with restore destination != 5x")
+					}
+
+					// role "pivotal" is required
+					username := operating.System.Getenv("PGUSER")
+					if username == "" {
+						currentUser, _ := operating.System.CurrentUser()
+						username = currentUser.Username
+					}
+					if username != "pivotal" {
+						Fail(`In destination database, please create a greenplum user "pivotal" and set PGUSER to "pivotal"`)
+					}
+
+					const timestamp = "20190104163445"
+					const artifact = "artifacts/1.7.1/20190104163445-plugin_no_compress_single-data-file_backup.tar.gz"
+					cwd, _ := os.Getwd()
+					tempdir := os.TempDir()
+					err := os.Chdir(tempdir)
+					if err != nil {
+						Fail("cannot change to temporary directory: " + tempdir)
+					}
+
+					// note: macos can have trouble with 'tar'; we could use golang tar  if there is an OS problem
+					cmd := exec.Command("tar", "xzf", cwd+"/"+artifact)
+					mustRunCommand(cmd)
 					pluginExecutablePath := fmt.Sprintf("%s/go/src/github.com/greenplum-db/gpbackup/plugins/example_plugin.sh", os.Getenv("HOME"))
 					copyPluginToAllHosts(backupConn, pluginExecutablePath)
 
-					timestamp := gpbackup(gpbackupPath, backupHelperPath, "--single-data-file", "--no-compression", "--plugin-config", pluginConfigPath)
+					//timestamp := gpbackup(gpbackupPath, backupHelperPath, "--single-data-file", "--no-compression", "--plugin-config", pluginConfigPath)
 					forceMetadataFileDownloadFromPlugin(backupConn, timestamp)
 
 					gprestore(gprestorePath, restoreHelperPath, timestamp, "--redirect-db", "restoredb", "--plugin-config", pluginConfigPath)
@@ -379,7 +407,7 @@ var _ = Describe("backup end to end integration tests", func() {
 					assertDataRestored(restoreConn, schema2TupleCounts)
 					assertArtifactsCleaned(restoreConn, timestamp)
 
-					os.RemoveAll(pluginDir)
+					_ = os.RemoveAll(tempdir)
 				})
 				It("runs gpbackup and gprestore with plugin and single-data-file", func() {
 					pluginDir := "/tmp/plugin_dest"
@@ -842,7 +870,7 @@ func gpbackup(gpbackupPath string, backupHelperPath string, args ...string) stri
 		os.Chdir("..")
 		command := exec.Command("make", "install_helper", fmt.Sprintf("helper_path=%s", backupHelperPath))
 		mustRunCommand(command)
-		os.Chdir("end_to_end")
+		os.Chdir("end_to_end_compatibility")
 	}
 	args = append([]string{"--verbose", "--dbname", "testdb"}, args...)
 	command := exec.Command(gpbackupPath, args...)
@@ -856,7 +884,7 @@ func gprestore(gprestorePath string, restoreHelperPath string, timestamp string,
 		os.Chdir("..")
 		command := exec.Command("make", "install_helper", fmt.Sprintf("helper_path=%s", restoreHelperPath))
 		mustRunCommand(command)
-		os.Chdir("end_to_end")
+		os.Chdir("end_to_end_compatibility")
 	}
 	args = append([]string{"--verbose", "--timestamp", timestamp}, args...)
 	command := exec.Command(gprestorePath, args...)
@@ -868,7 +896,7 @@ func buildAndInstallBinaries() (string, string, string) {
 	os.Chdir("..")
 	command := exec.Command("make", "build")
 	mustRunCommand(command)
-	os.Chdir("end_to_end")
+	os.Chdir("end_to_end_compatibility")
 	binDir := fmt.Sprintf("%s/go/bin", operating.System.Getenv("HOME"))
 	return fmt.Sprintf("%s/gpbackup", binDir), fmt.Sprintf("%s/gpbackup_helper", binDir), fmt.Sprintf("%s/gprestore", binDir)
 }
@@ -887,7 +915,7 @@ func buildOldBinaries(version string) (string, string) {
 	mustRunCommand(command)
 	command = exec.Command("dep", "ensure")
 	mustRunCommand(command)
-	os.Chdir("end_to_end")
+	os.Chdir("end_to_end_compatibility")
 	return gpbackupOldPath, gpbackupHelperOldPath
 }
 

@@ -82,8 +82,8 @@ delete_backup() {
 }
 
 plugin_api_version(){
-  echo "0.4.0"
-  echo "0.4.0" >> /tmp/plugin_out.txt
+  echo "0.3.0"
+  echo "0.3.0" >> /tmp/plugin_out.txt
 }
 
 "$@"
