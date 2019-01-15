@@ -138,3 +138,32 @@ pushd ~/workspace/gpdb/contrib/dummy_seclabel
 popd
 
 ```
+
+On macOS, if you see errors in gpdb master like:
+
+```
+configure: error: zstd library not found.
+```
+
+one way to get around this is to change configuration to compile GPDB with fewer features: 
+
+```bash
+$ cd gpdb
+$ ./configure --without-zstd --disable-orca --with-perl --with-python --with-libxml --with-gssapi --disable-gpfdist --with-openssl --prefix=/usr/local/gpdb && make -j8
+```
+
+On macOS, if you see errors like:
+
+```bash
+checking for apr-1-config
+cannot find apr-1-config
+```
+
+one way to get around this is to add some special paths to shell, adding these to ~/.bashrc :
+
+```bash
+export PATH="/usr/local/opt/apr/bin:$PATH"
+export PATH="/usr/local/opt/openssl/bin:$PATH"
+```
+
+(The problem is that the newest Apple Command Line Tools includes some of these binaries, so `brew` no longer will link such binaries.)
