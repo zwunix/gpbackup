@@ -4,8 +4,8 @@ PLATFORM: linux
 image_resource:
   type: docker-image
   source:
-    repository: golang
-    tag: '1.10.3'
+    repository: pivotaldata/gpdb6-centos6-test-gpbackup
+    tag: latest
 
 inputs:
 - name: gpbackup
@@ -21,6 +21,10 @@ run:
     export GOPATH=$PWD/go
     export PATH=$GOPATH/bin:$PATH
 
+    mv /go/src/github.com/greenplum-db/gpbackup/vendor $GOPATH/src/github.com/greenplum-db/gpbackup/.
     cd $GOPATH/src/github.com/greenplum-db/gpbackup
-    make depend
+	pushd vendor/github.com/onsi/ginkgo/ginkgo
+	  go install .
+	popd
+
     make unit
