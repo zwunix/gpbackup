@@ -94,3 +94,10 @@ clean :
 		# Code coverage files
 		rm -rf /tmp/cover*
 		rm -rf /tmp/unit*
+
+# call this target to test whether local dependencies are up-to-date with Gopkg.lock
+check_deps_up_to_date:
+		dep check  # will succeed only if ./vendors/ already has everything mentioned in Gopkg.lock
+
+docker:
+		docker build --iidfile gpdb6-centos6-test-gpbackup -t pivotaldata/gpdb6-centos6-test-gpbackup -f ci/docker/Dockerfile .
