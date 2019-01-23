@@ -366,7 +366,7 @@ var _ = Describe("backup end to end integration tests", func() {
 				})
 				FIt("runs gpbackup and gprestore with plugin, single-data-file, and no-compression", func() {
 
-					// for now, limit this to restoring to 5 (since archive is from 5)
+					// for now, limit restoring to 5x (archive is from 5x)
 					if !(restoreConn.Version.AtLeast("5.0.0") &&
 						restoreConn.Version.Before("6.0.0")) {
 						Fail("cannot run compat with restore destination != 5x")
@@ -383,7 +383,7 @@ var _ = Describe("backup end to end integration tests", func() {
 					}
 
 					const timestamp = "20190104163445"
-					const artifact = "artifacts/1.7.1/20190104163445-plugin_no_compress_single-data-file_backup.tar.gz"
+					const artifact = "artifacts/5.x/1.7.1/20190104163445-plugin_no_compress_single-data-file_backup.tar.gz"
 					cwd, _ := os.Getwd()
 					tempdir := os.TempDir()
 					err := os.Chdir(tempdir)
