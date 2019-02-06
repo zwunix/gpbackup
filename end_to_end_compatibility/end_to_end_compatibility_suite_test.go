@@ -967,8 +967,8 @@ func mustRunCommand(cmd *exec.Cmd) []byte {
 func copyPluginToAllHosts(conn *dbconn.DBConn, pluginPath string) {
 	hostnameQuery := `SELECT DISTINCT hostname AS string FROM gp_segment_configuration WHERE content != -1`
 	hostnames := dbconn.MustSelectStringSlice(conn, hostnameQuery)
+	pluginDir, _ := filepath.Split(pluginPath)
 	for _, hostname := range hostnames {
-		pluginDir, _ := filepath.Split(pluginPath)
 		command := exec.Command("ssh", hostname, fmt.Sprintf("mkdir -p %s", pluginDir))
 		mustRunCommand(command)
 		command = exec.Command("scp", pluginPath, fmt.Sprintf("%s:%s", hostname, pluginPath))
