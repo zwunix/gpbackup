@@ -58,6 +58,7 @@ var _ = Describe("backup end to end integration tests", func() {
 
 	var backupConn, restoreConn *dbconn.DBConn
 	var gpbackupPath, backupHelperPath, restoreHelperPath, gprestorePath, pluginConfigPath string
+	var unpacked_artifacts_dir string
 
 	BeforeSuite(func() {
 
@@ -103,6 +104,23 @@ var _ = Describe("backup end to end integration tests", func() {
 			if remoteOutput.NumErrors != 0 {
 				Fail("Could not create filespace test directory on 1 or more hosts")
 			}
+		}
+
+		cwd, _ := os.Getwd()
+		unpacked_artifacts_dir = os.TempDir() + "/unpacked_artifacts"
+		err = os.MkdirAll(unpacked_artifacts_dir, 0777)
+		if err != nil {
+			Fail("cannot create directory for unpacking: " + unpacked_artifacts_dir)
+		}
+		err = os.Chdir(unpacked_artifacts_dir)
+		if err != nil {
+			Fail("cannot change to temporary directory: " + unpacked_artifacts_dir)
+		}
+
+		untargz(cwd + "/artifacts/5.x/1.7.1/gpbackup-1.7.1-artifacts.tar.gz")
+		err = os.Chdir(cwd)
+		if err != nil {
+			Fail("cannot change to directory: " + unpacked_artifacts_dir)
 		}
 	})
 	AfterSuite(func() {
@@ -1034,7 +1052,7 @@ func untargz(source string) {
 	}
 	file, err := os.Open(sourcefile)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("cannot open file to be untarred: ", err)
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -1042,8 +1060,7 @@ func untargz(source string) {
 	// just in case we are reading a tar.gz file, add a filter to handle gzipped file
 	if strings.HasSuffix(sourcefile, ".gz") {
 		if fileReader, err = gzip.NewReader(file); err != nil {
-
-			fmt.Println(err)
+			fmt.Println("cannot read tarball", err)
 			os.Exit(1)
 		}
 		defer fileReader.Close()
@@ -1054,9 +1071,9 @@ func untargz(source string) {
 		header, err := tarBallReader.Next()
 		if err != nil {
 			if err == io.EOF {
-				break
+				break // the happy path exit
 			}
-			fmt.Println(err)
+			fmt.Println("cannot read next tarball item", err)
 			os.Exit(1)
 		}
 		// get the individual filename and extract to the current directory
@@ -1067,7 +1084,7 @@ func untargz(source string) {
 			fmt.Println("Creating directory :", filename)
 			err = os.MkdirAll(filename, os.FileMode(header.Mode)) // or use 0755 if you prefer
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("cannot create directory", err)
 				os.Exit(1)
 			}
 		case tar.TypeReg:
@@ -1075,16 +1092,20 @@ func untargz(source string) {
 			fmt.Println("Untarring :", filename)
 			writer, err := os.Create(filename)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("cannot create untarred file", err)
 				os.Exit(1)
 			}
-			io.Copy(writer, tarBallReader)
+			_, err = io.Copy(writer, tarBallReader)
+			if err != nil {
+				fmt.Println("cannot copy untarred file", err)
+				os.Exit(1)
+			}
 			err = os.Chmod(filename, os.FileMode(header.Mode))
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("cannot chmod untarred file", err)
 				os.Exit(1)
 			}
-			writer.Close()
+			_ = writer.Close()
 		default:
 			fmt.Printf("Unable to untar type : %c in file %s", header.Typeflag, filename)
 		}
