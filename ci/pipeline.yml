@@ -733,6 +733,8 @@ jobs:
     file: gpbackup/ci/tasks/integration-tests.yml
     params:
       GPBACKUP_VERSION: "1.7.1"
+  - task: backup-1.7.1-plugin-compatibility-latest
+    file: gpbackup/ci/tasks/compatibility-tests.yml
     on_success:
       <<: *ccp_destroy
     on_failure:
