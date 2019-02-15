@@ -101,6 +101,37 @@ var _ = Describe("backup/predata_externals tests", func() {
 FORMAT 'TEXT'
 ENCODING 'UTF-8';`)
 		})
+		It("prints a CREATE block without COLLATE for attributes", func() {
+			columns := make([]backup.ColumnDefinition, 0)
+			columns = append(columns, backup.ColumnDefinition{
+				Name:      "my_col",
+				Type:      "text",
+				Collation: "someCollation",
+			})
+			rel := backup.Relation{
+				Schema: "public",
+				Name:   "my_table",
+			}
+			extTableDef.Location = "file://host:port/path/file"
+			extTableDef.URIs = []string{"file://host:port/path/file"}
+			tdef := backup.TableDefinition{
+				ColumnDefs:  columns,
+				ExtTableDef: extTableDef,
+			}
+			table := backup.Table{
+				Relation:        rel,
+				TableDefinition: tdef,
+			}
+			backup.PrintExternalTableCreateStatement(backupfile, toc, table)
+			testutils.ExpectEntry(toc.PredataEntries, 0, "public", "", "my_table", "TABLE")
+			testutils.AssertBufferContents(toc.PredataEntries, buffer, `CREATE READABLE EXTERNAL TABLE public.my_table (
+	my_col text
+) LOCATION (
+	'file://host:port/path/file'
+)
+FORMAT 'TEXT'
+ENCODING 'UTF-8';`)
+		})
 		It("prints a CREATE block for a WRITABLE EXTERNAL table", func() {
 			extTableDef.Location = "file://host:port/path/file"
 			extTableDef.URIs = []string{"file://host:port/path/file"}
