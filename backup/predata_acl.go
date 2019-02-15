@@ -50,6 +50,36 @@ type ACL struct {
 	ConnectWithGrant    bool
 }
 
+func (acl ACL) Clone() ACL {
+	return ACL{
+		Grantee:             acl.Grantee,
+		Select:              acl.Select,
+		SelectWithGrant:     acl.SelectWithGrant,
+		Insert:              acl.Insert,
+		InsertWithGrant:     acl.InsertWithGrant,
+		Update:              acl.Update,
+		UpdateWithGrant:     acl.UpdateWithGrant,
+		Delete:              acl.Delete,
+		DeleteWithGrant:     acl.DeleteWithGrant,
+		Truncate:            acl.Truncate,
+		TruncateWithGrant:   acl.TruncateWithGrant,
+		References:          acl.References,
+		ReferencesWithGrant: acl.ReferencesWithGrant,
+		Trigger:             acl.Trigger,
+		TriggerWithGrant:    acl.TriggerWithGrant,
+		Usage:               acl.Usage,
+		UsageWithGrant:      acl.UsageWithGrant,
+		Execute:             acl.Execute,
+		ExecuteWithGrant:    acl.ExecuteWithGrant,
+		Create:              acl.Create,
+		CreateWithGrant:     acl.CreateWithGrant,
+		Temporary:           acl.Temporary,
+		TemporaryWithGrant:  acl.TemporaryWithGrant,
+		Connect:             acl.Connect,
+		ConnectWithGrant:    acl.ConnectWithGrant,
+	}
+}
+
 type MetadataMap map[UniqueID]ObjectMetadata
 
 func PrintStatements(metadataFile *utils.FileWithByteCount, toc *utils.TOC, obj utils.TOCObject, statements []string) {

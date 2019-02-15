@@ -57,7 +57,18 @@ func PrintExternalTableCreateStatement(metadataFile *utils.FileWithByteCount, to
 	extTableDef := table.ExtTableDef
 	extTableDef.Type, extTableDef.Protocol = DetermineExternalTableCharacteristics(extTableDef)
 	metadataFile.MustPrintf("\n\nCREATE %s TABLE %s (\n", tableTypeStrMap[extTableDef.Type], table.FQN())
-	printColumnDefinitions(metadataFile, table.ColumnDefs, "")
+
+	// filter columns to remove collation; external tables do not support this
+	var filteredColumns []ColumnDefinition
+	if table.ColumnDefs != nil {
+		filteredColumns = make([]ColumnDefinition, 0)
+		for _, original := range table.ColumnDefs {
+			clone := original.Clone()
+			clone.Collation = ""
+			filteredColumns = append(filteredColumns, clone)
+		}
+	}
+	printColumnDefinitions(metadataFile, filteredColumns, "")
 	metadataFile.MustPrintf(") ")
 	PrintExternalTableStatements(metadataFile, table.FQN(), extTableDef)
 	if extTableDef.Writable {

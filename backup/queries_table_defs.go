@@ -186,6 +186,36 @@ type ColumnDefinition struct {
 	SecurityLabel         string
 }
 
+func (cd ColumnDefinition) Clone() ColumnDefinition {
+	result := ColumnDefinition{
+		Oid:                   cd.Oid,
+		Num:                   cd.Num,
+		Name:                  cd.Name,
+		NotNull:               cd.NotNull,
+		HasDefault:            cd.HasDefault,
+		Type:                  cd.Type,
+		Encoding:              cd.Encoding,
+		StatTarget:            cd.StatTarget,
+		StorageType:           cd.StorageType,
+		DefaultVal:            cd.DefaultVal,
+		Comment:               cd.Comment,
+		Options:               cd.Options,
+		FdwOptions:            cd.FdwOptions,
+		Collation:             cd.Collation,
+		SecurityLabelProvider: cd.SecurityLabelProvider,
+		SecurityLabel:         cd.SecurityLabel,
+	}
+
+	if cd.ACL != nil {
+		result.ACL = make([]ACL, 0)
+		for _, acl := range cd.ACL {
+			result.ACL = append(result.ACL, acl.Clone())
+		}
+	}
+
+	return result
+}
+
 var storageTypeCodes = map[string]string{
 	"e": "EXTERNAL",
 	"m": "MAIN",
