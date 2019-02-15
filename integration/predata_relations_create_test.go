@@ -101,6 +101,23 @@ var _ = Describe("backup integration create statement tests", func() {
 			resultTable := backup.ConstructDefinitionsForTables(connectionPool, []backup.Relation{testTable.Relation})[0]
 			structmatcher.ExpectStructsToMatchExcluding(testTable.TableDefinition, resultTable.TableDefinition, "ColumnDefs.Oid", "ExtTableDef")
 		})
+		It("confirm that psql cannot handle an external web table with collation", func() {
+			testutils.SkipIfBefore6(connectionPool)
+
+			// ok for regular table
+			testhelper.AssertQueryRuns(connectionPool, `
+CREATE TABLE public.dummy_tab_with_collation (x text COLLATE pg_catalog."default")`)
+			defer testhelper.AssertQueryRuns(connectionPool, "DROP table public.dummy_tab_with_collation")
+
+			// If this sql ever succeeds, we need to change our printing of external tables
+			_, err := connectionPool.Exec(`
+CREATE READABLE EXTERNAL WEB TABLE public.dummy_ext_tab2 (
+    x text COLLATE pg_catalog."default"
+) EXECUTE 'echo foo'
+FORMAT 'TEXT'
+ENCODING 'UTF8'`)
+			Expect(err).To(HaveOccurred())
+		})
 		It("creates a basic append-optimized column-oriented table", func() {
 			rowOne := backup.ColumnDefinition{Oid: 0, Num: 1, Name: "i", NotNull: false, HasDefault: false, Type: "integer", Encoding: "compresstype=zlib,blocksize=32768,compresslevel=1", StatTarget: -1, StorageType: "", DefaultVal: "", Comment: "", ACL: emptyACL}
 			rowTwo := backup.ColumnDefinition{Oid: 0, Num: 2, Name: "j", NotNull: false, HasDefault: false, Type: "character varying(20)", Encoding: "compresstype=zlib,blocksize=32768,compresslevel=1", StatTarget: -1, StorageType: "", DefaultVal: "", Comment: "", ACL: emptyACL}
