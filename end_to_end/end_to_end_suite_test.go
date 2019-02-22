@@ -523,12 +523,14 @@ var _ = Describe("backup end to end integration tests", func() {
 
 			Context("with plugin", func() {
 				BeforeEach(func() {
-					skipIfOldBackupVersionBefore("1.7.0")
-					// FIXME: we are temporarily disabling these tests because we will be altering our backwards compatibility logic.
-					if useOldBackupVersion {
-						Skip("This test is only needed for the most recent backup versions")
-					}
-
+					/* Old backup version should be 1.7.0 because that is when plugins were released.
+					 * This is no longer possible due to several changes.
+					 * 1. Example plugin uses a directory structure that now mimics actual plugins as of release 1.9.0 commit f90db7d
+					 *     - This means the example plugin as of this commit is no longer backwards compatible.
+					 * 2. gpbackup only recently gained forward plugin API version compatibilty in release 1.10.0 commit f388428.
+					 *     - Before this commit, gpbackup will not work with any plugin API version other than 0.3.0
+					 */
+					skipIfOldBackupVersionBefore("1.10.0")
 				})
 				It("runs gpbackup and gprestore with plugin, single-data-file, and no-compression", func() {
 					pluginDir := "/tmp/plugin_dest"
@@ -582,12 +584,17 @@ var _ = Describe("backup end to end integration tests", func() {
 			})
 		})
 		Describe("Multi-file Plugin", func() {
+			BeforeEach(func() {
+				/* Old backup version should be 1.7.0 because that is when plugins were released.
+				 * This is no longer possible due to several changes.
+				 * 1. Example plugin uses a directory structure that now mimics actual plugins as of release 1.9.0 commit f90db7d
+				 *     - This means the example plugin as of this commit is no longer backwards compatible.
+				 * 2. gpbackup only recently gained forward plugin API version compatibilty in release 1.10.0 commit f388428.
+				 *     - Before this commit, gpbackup will not work with any plugin API version other than 0.3.0
+				 */
+				skipIfOldBackupVersionBefore("1.10.0")
+			})
 			It("runs gpbackup and gprestore with plugin and no-compression", func() {
-				skipIfOldBackupVersionBefore("1.7.0")
-				// FIXME: we are temporarily disabling these tests because we will be altering our backwards compatibility logic.
-				if useOldBackupVersion {
-					Skip("This test is only needed for the most recent backup versions")
-				}
 				pluginDir := "/tmp/plugin_dest"
 				pluginExecutablePath := fmt.Sprintf("%s/go/src/github.com/greenplum-db/gpbackup/plugins/example_plugin.sh", os.Getenv("HOME"))
 				copyPluginToAllHosts(backupConn, pluginExecutablePath)
@@ -604,11 +611,6 @@ var _ = Describe("backup end to end integration tests", func() {
 				os.RemoveAll(pluginDir)
 			})
 			It("runs gpbackup and gprestore with plugin and compression", func() {
-				skipIfOldBackupVersionBefore("1.7.0")
-				// FIXME: we are temporarily disabling these tests because we will be altering our backwards compatibility logic.
-				if useOldBackupVersion {
-					Skip("This test is only needed for the most recent backup versions")
-				}
 				pluginDir := "/tmp/plugin_dest"
 				pluginExecutablePath := fmt.Sprintf("%s/go/src/github.com/greenplum-db/gpbackup/plugins/example_plugin.sh", os.Getenv("HOME"))
 				copyPluginToAllHosts(backupConn, pluginExecutablePath)
