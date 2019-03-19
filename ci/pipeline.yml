@@ -89,6 +89,13 @@ resources:
       access_key_id: {{bucket-access-key-id}}
       secret_access_key: {{bucket-secret-access-key}}
 
+- name: gp_backup_manager_src
+  type: git
+  source:
+    branch: master
+    private_key: {{gp-backup-manager-remote-deploy-key}}
+    uri: {{gp-backup-manager-git-remote}}
+
 - name: bin_gpdb_5x_stable
   type: s3
   source:
@@ -783,6 +790,85 @@ jobs:
       GPBACKUP_VERSION: "1.7.1"
     on_success:
       <<: *ccp_destroy
+    on_failure:
+      *slack_alert
+  ensure:
+    <<: *set_failed
+
+- name: gp-backup-manager-tests
+  plan:
+  - aggregate:
+    - get: gp_backup_manager_src
+      trigger: true
+    # - get: gpbackup
+    #   trigger: true
+    # - get: ccp_src
+    # - get: gpdb_src
+    # - get: bin_gpdb_5x_stable
+    # - get: nightly-trigger
+    #   trigger: true
+    # - get: gpbackup-dependencies
+    #   passed:
+    #    - build_dependencies
+  # - put: terraform
+    # params:
+    #   <<: *ccp_default_params
+    #   vars:
+    #     <<: *ccp_default_vars
+  # - task: gen_cluster
+    # file: ccp_src/ci/tasks/gen_cluster.yml
+    # params:
+    #   <<: *ccp_gen_cluster_default_params
+    # input_mapping:
+    #   gpdb_binary: bin_gpdb_5x_stable
+    #   gpdb_src: gpdb_src
+  # - task: gpinitsystem
+    # file: ccp_src/ci/tasks/gpinitsystem.yml
+  # - task: setup-centos-env
+    # file: gpbackup/ci/tasks/setup-centos-env.yml
+  - task: run_tests
+    config:
+      platform: linux
+      inputs:
+       # - name: gpbackup
+       #   path: go/src/github.com/greenplum-db/gpbackup
+       - name: gp_backup_manager_src
+         path: go/src/github.com/pivotal/gp-backup-manager
+       - name: ccp_src
+       # - name: cluster_env_files
+
+      image_resource:
+        type: docker-image
+        source:
+          repository: golang
+          tag: '1.10.3'
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          set -ex
+
+          # ccp_src/scripts/setup_ssh_to_cluster.sh
+          scp -r go/src/github.com/pivotal/gp-backup-manager mdw:/home/gpadmin/go/src/github.com/pivotal/gp-backup-manager
+
+          cat <<SCRIPT > /tmp/run_tests.bash
+            set -ex
+            source env.sh
+
+            cd \$GOPATH/src/github.com/greenplum-db
+            pushd gp-backup-manager
+              make depend
+              make unit
+              make build
+            popd
+          SCRIPT
+
+          chmod +x /tmp/run_tests.bash
+          scp /tmp/run_tests.bash mdw:/home/gpadmin/run_tests.bash
+          ssh -t mdw "bash /home/gpadmin/run_tests.bash"
+    # on_success:
+    #   <<: *ccp_destroy
     on_failure:
       *slack_alert
   ensure:
