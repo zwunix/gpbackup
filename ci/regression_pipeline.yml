@@ -11,13 +11,13 @@ resource_types:
     repository: frodenas/gcs-resource
 
 resources:
-- name: nightly-trigger
-  type: time
-  source:
-    location: America/Los_Angeles
-    days: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday]
-    start: 6:00 AM
-    stop: 7:00 AM
+# - name: nightly-trigger
+#   type: time
+#   source:
+#     location: America/Los_Angeles
+#     days: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday]
+#     start: 6:00 AM
+#     stop: 7:00 AM
 
 - name: icw_gporca_centos6_dump
   type: s3
@@ -113,8 +113,8 @@ jobs:
     - get: gpbackup
       trigger: true
     - get: gpbackup-dependencies
-    - get: nightly-trigger
-      trigger: true
+    # - get: nightly-trigger
+    #   trigger: true
   - task: build-dependencies
     file: gpbackup/ci/tasks/build-dependencies.yml
     attempts: 5
@@ -133,8 +133,8 @@ jobs:
     - get: icw_gporca_centos6_dump
     - get: dummy_seclabel
     - get: gpbackup-dependencies
-    - get: nightly-trigger
-      trigger: true
+    # - get: nightly-trigger
+    #   trigger: true
       passed:
        - build_dependencies
   - put: terraform
