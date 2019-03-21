@@ -9,10 +9,11 @@ image_resource:
 inputs:
 - name: gpbackup
   path: go/src/github.com/greenplum-db/gpbackup
-- name: ccp_src
-- name: cluster_env_files
+# - name: ccp_src
+# - name: cluster_env_files
 - name: gpdb_src
 - name: sqldump
+- name: bin_gpdb
 
 outputs:
 - name: artifacts
@@ -24,19 +25,22 @@ run:
   - |
     set -ex
 
-    # assume greenplum is fresh and has only system databases
-    ccp_src/scripts/setup_ssh_to_cluster.sh
-    ssh -t mdw 'mkdir -p /home/gpadmin/sqldump'
-    scp sqldump/* mdw:/home/gpadmin/sqldump/
-    ssh -t mdw 'xz -d /home/gpadmin/sqldump/dump.sql.xz'
+    source gpdb_src/concourse/scripts/common.bash
 
-    # load data from sql, backup, and export the backup artifact
-    GENERATE_SCRIPT=go/src/github.com/greenplum-db/gpbackup/ci/scripts/generate_backup_artifact.bash
-    scp $GENERATE_SCRIPT mdw:/home/gpadmin/generate_backup_artifact.bash
-    ssh -t mdw "bash  /home/gpadmin/generate_backup_artifact.bash"
+    # setup cluster
+    time install_and_configure_gpdb
+    gpdb_src/concourse/scripts/setup_gpadmin_user.bash centos
+    time make_cluster
 
-    scp mdw:/tmp/regression_dump.sql.xz  artifacts/
+    # setup environment
+    source /usr/local/greenplum-db-devel/greenplum_path.sh
+    source /opt/gcc_env.sh
+    source gpdb_src/gpAux/gpdemo/gpdemo-env.sh
+    sudo -u gpadmin go/src/github.com/greenplum-db/gpbackup/ci/scripts/generate_backup_artifact.bash
 
+    # scp mdw:/tmp/regression_dump.sql.xz  artifacts/
+
+    exit 1
     # combine gpbackup's separate tarballs for master and segments
     ssh -t sdw1 "pushd /tmp ; tar czvf backup_artifact.tar.gz backup_artifact ; popd"
     mkdir /tmp/gpbackup_allsegments

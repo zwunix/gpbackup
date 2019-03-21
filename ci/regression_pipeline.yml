@@ -137,25 +137,26 @@ jobs:
     #   trigger: true
       passed:
        - build_dependencies
-  - put: terraform
-    params:
-      <<: *ccp_default_params
-      vars:
-        <<: *ccp_default_vars
-  - task: gen_cluster
-    file: ccp_src/ci/tasks/gen_cluster.yml
-    params:
-      <<: *ccp_gen_cluster_default_params
-    input_mapping:
-      gpdb_binary: bin_gpdb6
-      gpdb_src: gpdb_src
-  - task: gpinitsystem
-    file: ccp_src/ci/tasks/gpinitsystem.yml
-  - task: setup-centos-env
-    file: gpbackup/ci/tasks/setup-centos-env-gpdb6.yml
+  # - put: terraform
+  #   params:
+  #     <<: *ccp_default_params
+  #     vars:
+  #       <<: *ccp_default_vars
+  # - task: gen_cluster
+  #   file: ccp_src/ci/tasks/gen_cluster.yml
+  #   params:
+  #     <<: *ccp_gen_cluster_default_params
+  #   input_mapping:
+  #     gpdb_binary: bin_gpdb
+  #     gpdb_src: gpdb_src
+  # - task: gpinitsystem
+  #   file: ccp_src/ci/tasks/gpinitsystem.yml
+  # - task: setup-centos-env
+  #   file: gpbackup/ci/tasks/setup-centos-env-gpdb6.yml
   - task: load_regressionDB_into_cluster
     file: gpbackup/ci/tasks/gpbackup-regression.yml
-    input_mapping: {sqldump: icw_gporca_centos6_dump}
+    input_mapping:
+      sqldump: icw_gporca_centos6_dump
   - put: backup_artifact_resource
     params:
       file: artifacts/gpbackup_all.tar.gz
