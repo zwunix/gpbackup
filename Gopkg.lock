@@ -2,28 +2,23 @@
 
 
 [[projects]]
-  digest = "1:aba270497eb2d49f5cba6f4162d524b9a1195a24cbce8be20bf56a0051f47deb"
   name = "github.com/blang/semver"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
   version = "v3.5.1"
 
 [[projects]]
   branch = "master"
-  digest = "1:0015d36520ed5d32558da4d9f6bd9a9acc644bd43cac9d4291bbb566161effa8"
   name = "github.com/blang/vfs"
   packages = [
     ".",
-    "memfs",
+    "memfs"
   ]
-  pruneopts = "NUT"
   revision = "4c8d59de28bed5c7e8125947460120b9d069dd44"
   source = "https://github.com/dsharp-pivotal/vfs.git"
 
 [[projects]]
   branch = "master"
-  digest = "1:5bc0be0a9cf52810182b54d745db9d91a5027ac81a1e33ba93d35b434e5fe152"
   name = "github.com/greenplum-db/gp-common-go-libs"
   packages = [
     "cluster",
@@ -32,35 +27,29 @@
     "iohelper",
     "operating",
     "structmatcher",
-    "testhelper",
+    "testhelper"
   ]
-  pruneopts = "NUT"
   revision = "afc498a415c4e67b08b3bd26fbaeef8e52f239a0"
 
 [[projects]]
-  digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
   name = "github.com/hpcloud/tail"
   packages = [
     ".",
     "ratelimiter",
     "util",
     "watch",
-    "winfile",
+    "winfile"
   ]
-  pruneopts = "NUT"
   revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
 
 [[projects]]
-  digest = "1:1cbbe90c54d3308204c955163a6dce9a328839a166aadd2d13dd26ab290162f8"
   name = "github.com/jackc/pgx"
   packages = [
     ".",
@@ -69,52 +58,42 @@
     "pgio",
     "pgproto3",
     "pgtype",
-    "stdlib",
+    "stdlib"
   ]
-  pruneopts = "NUT"
   revision = "c59c9cac59ab95eceb0c12ff338923c62f411ea2"
   version = "v3.3.0"
 
 [[projects]]
-  digest = "1:0c11e987235e8f37af4e9f24cca02754827d009e8b66cf24483b0006504f6045"
   name = "github.com/jmoiron/sqlx"
   packages = [
     ".",
-    "reflectx",
+    "reflectx"
   ]
-  pruneopts = "NUT"
   revision = "d161d7a76b5661016ad0b085869f77fd410f3e6a"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:784d05a21c37defeaba624c1b0a55cb2c6488dbc9f456df16aab1af4928618c6"
   name = "github.com/lib/pq"
   packages = [
     ".",
-    "oid",
+    "oid"
   ]
-  pruneopts = "NUT"
   revision = "9eb73efc1fcc404148b56765b0d3f61d9a5ef8ee"
 
 [[projects]]
-  digest = "1:70ef8268170621826f8c111ac1674afe75136f526f449453b4a6631c6dba1946"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
   version = "v0.0.4"
 
 [[projects]]
   branch = "master"
-  digest = "1:26217ee135b8157549e648efe97dff3282e4bd597a912d784db964df41067f29"
   name = "github.com/nightlyone/lockfile"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "0ad87eef1443f64d3d8c50da647e2b1552851124"
 
 [[projects]]
-  digest = "1:dbc24dd0591271d269786adff7458f2c1437305091e41979c5495efe3df09ab8"
   name = "github.com/onsi/ginkgo"
   packages = [
     ".",
@@ -142,14 +121,12 @@
     "reporters/stenographer",
     "reporters/stenographer/support/go-colorable",
     "reporters/stenographer/support/go-isatty",
-    "types",
+    "types"
   ]
-  pruneopts = "NUT"
   revision = "eea6ad008b96acdaa524f5b409513bf062b500ad"
   version = "v1.8.0"
 
 [[projects]]
-  digest = "1:c9385d498108298283c3f3685667d8c87bf86a94d129fd49f8fd4485f1903e14"
   name = "github.com/onsi/gomega"
   packages = [
     ".",
@@ -165,66 +142,52 @@
     "matchers/support/goraph/edge",
     "matchers/support/goraph/node",
     "matchers/support/goraph/util",
-    "types",
+    "types"
   ]
-  pruneopts = "NUT"
   revision = "65fb64232476ad9046e57c26cd0bff3d3a8dc6cd"
   version = "v1.4.3"
 
 [[projects]]
-  digest = "1:14715f705ff5dfe0ffd6571d7d201dd8e921030f8070321a79380d8ca4ec1a24"
   name = "github.com/pkg/errors"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:d917313f309bda80d27274d53985bc65651f81a5b66b820749ac7f8ef061fd04"
   name = "github.com/sergi/go-diff"
   packages = ["diffmatchpatch"]
-  pruneopts = "NUT"
   revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:343d44e06621142ab09ae0c76c1799104cdfddd3ffb445d78b1adf8dc3ffaf3d"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
   version = "v0.0.3"
 
 [[projects]]
-  digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
   name = "github.com/spf13/pflag"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
   version = "v1.0.3"
 
 [[projects]]
   branch = "master"
-  digest = "1:03a8ff54c1a62710fe21a08ad9ccd554ac90232c4fd34c2731f65dd47e1f2077"
   name = "golang.org/x/net"
   packages = [
     "html",
     "html/atom",
-    "html/charset",
+    "html/charset"
   ]
-  pruneopts = "NUT"
   revision = "16b79f2e4e95ea23b2bf9903c9809ff7b013ce85"
 
 [[projects]]
   branch = "master"
-  digest = "1:e482ae9014dcf45ffb110e47d8da101c63a430e2ac6efa5133d4adebe4a459dd"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  pruneopts = "NUT"
   revision = "584f3b12f43e1e55248c90e84804777009eed0a4"
 
 [[projects]]
-  digest = "1:7c61a813b250ba8bb02bebb0382e6c3d00e04da2b577dc58985b86312fb89ffd"
   name = "golang.org/x/text"
   packages = [
     "encoding",
@@ -243,15 +206,13 @@
     "language",
     "runes",
     "transform",
-    "unicode/cldr",
+    "unicode/cldr"
   ]
-  pruneopts = "NUT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:7ddcb389cead44e26b0a4570d464cddd3c463c787725e1b781f4fe6d4fbea0dd"
   name = "golang.org/x/tools"
   packages = [
     "cmd/goimports",
@@ -266,82 +227,44 @@
     "internal/fastwalk",
     "internal/gopathwalk",
     "internal/module",
-    "internal/semver",
+    "internal/semver"
   ]
-  pruneopts = "NUT"
   revision = "00c44ba9c14f88ffdd4fb5bfae57fe8dd6d6afb1"
 
 [[projects]]
-  digest = "1:26e56bf1243a3675608f918a1574bf0005d5263b67b84a24a5fb0946ad7a75e3"
   name = "gopkg.in/DATA-DOG/go-sqlmock.v1"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "3f9954f6f6697845b082ca57995849ddf614f450"
   version = "v1.3.3"
 
 [[projects]]
-  digest = "1:21562b59c496f4cbd7a40beaa257ac6761002dd3e36259f532216082abace8b1"
   name = "gopkg.in/cheggaaa/pb.v1"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "f907f6f5dd81f77c2bbc1cde92e4c5a04720cb11"
   version = "v1.0.28"
 
 [[projects]]
-  digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
   name = "gopkg.in/fsnotify.v1"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   source = "https://github.com/fsnotify/fsnotify/archive/v1.4.7.tar.gz"
   version = "v1.4.7"
 
 [[projects]]
   branch = "v1"
-  digest = "1:8fb1ccb16a6cfecbfdfeb84d8ea1cc7afa8f9ef16526bc2326f72d993e32cef1"
   name = "gopkg.in/tomb.v1"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[projects]]
   branch = "v2"
-  digest = "1:18108594151654e9e696b27b181b953f9a90b16bf14d253dd1b397b025a1487f"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "51d6538a90f86fe93ac480b35f37b2be17fef232"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/blang/semver",
-    "github.com/blang/vfs",
-    "github.com/blang/vfs/memfs",
-    "github.com/greenplum-db/gp-common-go-libs/cluster",
-    "github.com/greenplum-db/gp-common-go-libs/dbconn",
-    "github.com/greenplum-db/gp-common-go-libs/gplog",
-    "github.com/greenplum-db/gp-common-go-libs/iohelper",
-    "github.com/greenplum-db/gp-common-go-libs/operating",
-    "github.com/greenplum-db/gp-common-go-libs/structmatcher",
-    "github.com/greenplum-db/gp-common-go-libs/testhelper",
-    "github.com/lib/pq",
-    "github.com/nightlyone/lockfile",
-    "github.com/onsi/ginkgo",
-    "github.com/onsi/ginkgo/extensions/table",
-    "github.com/onsi/ginkgo/ginkgo",
-    "github.com/onsi/gomega",
-    "github.com/onsi/gomega/gbytes",
-    "github.com/onsi/gomega/gexec",
-    "github.com/pkg/errors",
-    "github.com/sergi/go-diff/diffmatchpatch",
-    "github.com/spf13/cobra",
-    "github.com/spf13/pflag",
-    "golang.org/x/tools/cmd/goimports",
-    "gopkg.in/DATA-DOG/go-sqlmock.v1",
-    "gopkg.in/cheggaaa/pb.v1",
-    "gopkg.in/yaml.v2",
-  ]
+  inputs-digest = "a74e6edabb354c770f01e4baa0d9fe1f629d5fc870b9b3e0e31ff1ddadad3f24"
   solver-name = "gps-cdcl"
   solver-version = 1
