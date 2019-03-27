@@ -2,8 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -18,9 +20,10 @@ import (
 const RequiredPluginVersion = "0.3.0"
 
 type PluginConfig struct {
-	ExecutablePath string
-	ConfigPath     string
-	Options        map[string]string
+	ExecutablePath      string
+	ConfigPath          string
+	Options             map[string]string
+	backupPluginVersion string
 }
 
 type PluginScope string
@@ -214,11 +217,33 @@ func (plugin *PluginConfig) buildHookErrorMsgAndFunc(command string,
 /*---------------------------------------------------------------------------------------------------*/
 
 func (plugin *PluginConfig) CopyPluginConfigToAllHosts(c *cluster.Cluster, configPath string) {
+	// copy plugin config to tmp dir in master
+	srcFileHandle, err := os.Open(configPath)
+	gplog.FatalOnError(err)
+	defer in.Close()
+
+	masterTmpConfigPath := path.Join("/tmp", path.Base(configPath))
+	destFileHandle, err := os.Create(masterTmpConfigPath)
+	gplog.FatalOnError(err)
+	defer out.Close()
+
+	_, err = io.Copy(srcFileHandle, destFileHandle)
+	gplog.FatalOnError(err)
+
+	// append the plugin version the backup was taken with
+	f, err := os.OpenFile(masterTmpConfigPath, os.O_APPEND|os.O_WRONLY, 0644)
+	gplog.FatalOnError(err)
+	_, err := f.Write([]byte(fmt.Sprintf(`backup_plugin_version: %s`, plugin.BackupPluginVersion)))
+	gplog.FatalOnError(err)
+	err := f.Close()
+	gplog.FatalOnError(err)
+
+	//copy the plugin file to the segments from tmp
 	remoteOutput := c.GenerateAndExecuteCommand("Copying plugin config to all hosts",
 		func(contentID int) string {
-			return fmt.Sprintf("scp %s %s:/tmp/.", configPath, c.GetHostForContent(contentID))
+			return fmt.Sprintf("scp %s %s:/tmp/.", masterTmpConfigPath, c.GetHostForContent(contentID))
 		},
-		cluster.ON_MASTER_TO_HOSTS_AND_MASTER)
+		cluster.ON_MASTER_TO_HOSTS)
 	c.CheckClusterError(remoteOutput, "Unable to copy plugin config", func(contentID int) string {
 		return "Unable to copy plugin config"
 	})

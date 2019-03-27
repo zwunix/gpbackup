@@ -61,7 +61,7 @@ var _ = Describe("utils/plugin tests", func() {
 		})
 	})
 	Describe("plugin config", func() {
-		It("successfully copies to all hosts", func() {
+		It("successfully copies to master tmp, appends the version backup was taken with, and copies to segments", func() {
 			testConfigPath := "/tmp/my_plugin_config.yml"
 			subject.CopyPluginConfigToAllHosts(testCluster, testConfigPath)
 
