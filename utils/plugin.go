@@ -75,7 +75,8 @@ func (plugin *PluginConfig) MustRestoreFile(filenamePath string) {
 	gplog.FatalOnError(err, string(output))
 }
 
-func (plugin *PluginConfig) CheckPluginExistsOnAllHosts(c *cluster.Cluster) {
+//If this command is successful it should return the plugin version that it will be using.
+func (plugin *PluginConfig) CheckPluginExistsOnAllHosts(c *cluster.Cluster) string {
 	remoteOutput := c.GenerateAndExecuteCommand(
 		"Checking that plugin exists on all hosts",
 		func(contentID int) string {
@@ -98,7 +99,11 @@ func (plugin *PluginConfig) CheckPluginExistsOnAllHosts(c *cluster.Cluster) {
 	}
 
 	numIncorrect := 0
+	var pluginVersion string
 	for contentID := range remoteOutput.Stdouts {
+		if strings.TrimSpace(remoteOutput.Stdouts[contentID]) != "" {
+			pluginVersion = strings.TrimSpace(remoteOutput.Stdouts[contentID])
+		}
 		version, err := semver.Make(strings.TrimSpace(remoteOutput.Stdouts[contentID]))
 		if err != nil {
 			gplog.Fatal(fmt.Errorf("Unable to parse plugin API version: %s", err.Error()), "")
@@ -113,6 +118,8 @@ func (plugin *PluginConfig) CheckPluginExistsOnAllHosts(c *cluster.Cluster) {
 		cluster.LogFatalClusterError("Plugin API version incorrect",
 			cluster.ON_HOSTS_AND_MASTER, numIncorrect)
 	}
+
+	return pluginVersion
 }
 
 /*-----------------------------Hooks------------------------------------------*/

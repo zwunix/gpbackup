@@ -114,8 +114,8 @@ func DoSetup() {
 	InitializeBackupReport(*opts)
 
 	if pluginConfigFlag != "" {
-		pluginConfig.CheckPluginExistsOnAllHosts(globalCluster)
-
+		pluginVersion := pluginConfig.CheckPluginExistsOnAllHosts(globalCluster)
+		backupReport.PluginVersion = pluginVersion
 		pluginConfig.CopyPluginConfigToAllHosts(globalCluster, pluginConfigFlag)
 		pluginConfig.SetupPluginForBackup(globalCluster, globalFPInfo)
 	}

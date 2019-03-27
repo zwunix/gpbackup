@@ -38,6 +38,7 @@ type BackupConfig struct {
 	LeafPartitionData     bool
 	MetadataOnly          bool
 	Plugin                string
+	PluginVersion         string
 	RestorePlan           []RestorePlanEntry
 	SingleDataFile        bool
 	Timestamp             string

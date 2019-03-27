@@ -28,7 +28,9 @@ var _ = Describe("utils/plugin tests", func() {
 				Stdouts: stdOut,
 			},
 		}
-		stdOut[0] = utils.RequiredPluginVersion // this is a successful result
+		stdOut[-1] = utils.RequiredPluginVersion // this is a successful result
+		stdOut[0] = utils.RequiredPluginVersion  // this is a successful result
+		stdOut[1] = utils.RequiredPluginVersion  // this is a successful result
 		testCluster = &cluster.Cluster{
 			ContentIDs: []int{-1, 0, 1},
 			Executor:   &executor,
@@ -48,7 +50,7 @@ var _ = Describe("utils/plugin tests", func() {
 				return "my/install/dir"
 			}
 
-			subject.CheckPluginExistsOnAllHosts(testCluster)
+			_ = subject.CheckPluginExistsOnAllHosts(testCluster)
 
 			allCommands := executor.ClusterCommands[0] // only one set of commands was issued
 			expectedCommand := "source my/install/dir/greenplum_path.sh && myPlugin plugin_api_version"
@@ -74,7 +76,8 @@ var _ = Describe("utils/plugin tests", func() {
 	Describe("version validation", func() {
 		When("version is equal to requirement", func() {
 			It("succeeds", func() {
-				subject.CheckPluginExistsOnAllHosts(testCluster)
+				version := subject.CheckPluginExistsOnAllHosts(testCluster)
+				Expect(version).To(Equal("0.3.0"))
 			})
 		})
 		When("version is greater than requirement", func() {
@@ -84,7 +87,7 @@ var _ = Describe("utils/plugin tests", func() {
 				greater, _ := semver.Make(strconv.Itoa(int(version.Major)+1) + ".0.0")
 				executor.ClusterOutput.Stdouts[0] = greater.String()
 
-				subject.CheckPluginExistsOnAllHosts(testCluster)
+				_ = subject.CheckPluginExistsOnAllHosts(testCluster)
 			})
 		})
 		When("version is too low", func() {
@@ -92,7 +95,7 @@ var _ = Describe("utils/plugin tests", func() {
 				executor.ClusterOutput.Stdouts[0] = "0.2.0"
 
 				defer testhelper.ShouldPanicWithMessage("Plugin API version incorrect")
-				subject.CheckPluginExistsOnAllHosts(testCluster)
+				_ = subject.CheckPluginExistsOnAllHosts(testCluster)
 			})
 		})
 		When("version cannot be parsed", func() {
@@ -100,7 +103,7 @@ var _ = Describe("utils/plugin tests", func() {
 				executor.ClusterOutput.Stdouts[0] = "foo"
 
 				defer testhelper.ShouldPanicWithMessage("Unable to parse plugin API version")
-				subject.CheckPluginExistsOnAllHosts(testCluster)
+				_ = subject.CheckPluginExistsOnAllHosts(testCluster)
 			})
 		})
 		When("version command fails", func() {
@@ -109,7 +112,7 @@ var _ = Describe("utils/plugin tests", func() {
 				executor.ClusterOutput.NumErrors = 1
 
 				defer testhelper.ShouldPanicWithMessage("Unable to execute plugin myFailingPlugin")
-				subject.CheckPluginExistsOnAllHosts(testCluster)
+				_ = subject.CheckPluginExistsOnAllHosts(testCluster)
 			})
 		})
 	})
