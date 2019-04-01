@@ -47,7 +47,7 @@ resources:
   source:
     branch: master
     uri: https://github.com/greenplum-db/gpbackup
-    tag_filter: 1.10.0
+    tag_filter: 1.11.0
 
 - name: gpbackup_s3_plugin_tagged_src
   type: git
