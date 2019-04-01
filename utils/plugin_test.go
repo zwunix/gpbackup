@@ -1,7 +1,12 @@
 package utils_test
 
 import (
+	"os"
 	"strconv"
+
+	"github.com/greenplum-db/gp-common-go-libs/gplog"
+
+	"github.com/greenplum-db/gp-common-go-libs/iohelper"
 
 	"github.com/blang/semver"
 	"github.com/greenplum-db/gp-common-go-libs/cluster"
@@ -14,6 +19,23 @@ import (
 )
 
 var _ = Describe("utils/plugin tests", func() {
+
+	configContents := `
+executablepath: /usr/local/gpdb/bin/gpbackup_ddboost_plugin
+options:
+  hostname: "10.85.20.10"
+  storage_unit: "GPDB"
+  username: "gpadmin"
+  password: "changeme"
+  password_encryption:
+  directory: "/blah"
+  replication: "on"
+  remote_hostname: "10.85.20.11"
+  remote_storage_unit: "GPDB"
+  remote_username: "gpadmin"
+  remote_password: "changeme"
+  remote_directory: "/blah"
+`
 	stdOut := make(map[int]string, 1)
 	var testCluster *cluster.Cluster
 	var executor testhelper.TestExecutor
@@ -60,9 +82,21 @@ var _ = Describe("utils/plugin tests", func() {
 			}
 		})
 	})
-	Describe("plugin config", func() {
-		It("successfully copies to master tmp, appends the version backup was taken with, and copies to segments", func() {
+	Describe("copy plugin config", func() {
+		It("successfully copies to master and segments, and appends the version of the plugin", func() {
 			testConfigPath := "/tmp/my_plugin_config.yml"
+
+			if _, err := os.Stat(testConfigPath); os.IsNotExist(err) {} else {
+				err := os.Remove(testConfigPath)
+				gplog.FatalOnError(err)
+			}
+			file := iohelper.MustOpenFileForWriting(testConfigPath)
+			_, err := file.Write([]byte(configContents))
+			Expect(err).ToNot(HaveOccurred())
+			err = file.Close()
+			Expect(err).ToNot(HaveOccurred())
+
+			subject.BackupPluginVersion = "my.test.version"
 			subject.CopyPluginConfigToAllHosts(testCluster, testConfigPath)
 
 			Expect(executor.NumExecutions).To(Equal(1))
@@ -71,6 +105,10 @@ var _ = Describe("utils/plugin tests", func() {
 			Expect(cc[-1][2]).To(Equal("scp /tmp/my_plugin_config.yml master:/tmp/."))
 			Expect(cc[0][2]).To(Equal("scp /tmp/my_plugin_config.yml segment1:/tmp/."))
 			Expect(cc[1][2]).To(Equal("scp /tmp/my_plugin_config.yml segment2:/tmp/."))
+
+			contents, err := iohelper.ReadLinesFromFile(testConfigPath)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(contents[len(contents)-1]).To(Equal(`backup_plugin_version: "my.test.version"`))
 		})
 	})
 	Describe("version validation", func() {

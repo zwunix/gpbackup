@@ -2,12 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/greenplum-db/gp-common-go-libs/iohelper"
 
 	"github.com/blang/semver"
 	"github.com/greenplum-db/gp-common-go-libs/cluster"
@@ -22,8 +23,7 @@ const RequiredPluginVersion = "0.3.0"
 type PluginConfig struct {
 	ExecutablePath      string
 	ConfigPath          string
-	Options             map[string]string
-	backupPluginVersion string
+	BackupPluginVersion string
 }
 
 type PluginScope string
@@ -122,6 +122,7 @@ func (plugin *PluginConfig) CheckPluginExistsOnAllHosts(c *cluster.Cluster) stri
 			cluster.ON_HOSTS_AND_MASTER, numIncorrect)
 	}
 
+  plugin.BackupPluginVersion = pluginVersion
 	return pluginVersion
 }
 
@@ -218,24 +219,26 @@ func (plugin *PluginConfig) buildHookErrorMsgAndFunc(command string,
 
 func (plugin *PluginConfig) CopyPluginConfigToAllHosts(c *cluster.Cluster, configPath string) {
 	// copy plugin config to tmp dir in master
-	srcFileHandle, err := os.Open(configPath)
+
+	lines, err := iohelper.ReadLinesFromFile(configPath)
 	gplog.FatalOnError(err)
-	defer in.Close()
 
 	masterTmpConfigPath := path.Join("/tmp", path.Base(configPath))
-	destFileHandle, err := os.Create(masterTmpConfigPath)
-	gplog.FatalOnError(err)
-	defer out.Close()
 
-	_, err = io.Copy(srcFileHandle, destFileHandle)
+	// todo add test to handle case where file already exist
+	err = os.Remove(masterTmpConfigPath)
+	gplog.FatalOnError(err)
+
+	destFileHandle := iohelper.MustOpenFileForWriting(masterTmpConfigPath)
+	contents := strings.Join(lines, "\n") + "\n"
+	_, err = destFileHandle.Write([]byte(contents))
 	gplog.FatalOnError(err)
 
 	// append the plugin version the backup was taken with
-	f, err := os.OpenFile(masterTmpConfigPath, os.O_APPEND|os.O_WRONLY, 0644)
+	// todo make sure final line has linefeed
+	_, err = destFileHandle.Write([]byte(fmt.Sprintf("backup_plugin_version: \"%s\"\n", plugin.BackupPluginVersion)))
 	gplog.FatalOnError(err)
-	_, err := f.Write([]byte(fmt.Sprintf(`backup_plugin_version: %s`, plugin.BackupPluginVersion)))
-	gplog.FatalOnError(err)
-	err := f.Close()
+	err = destFileHandle.Close()
 	gplog.FatalOnError(err)
 
 	//copy the plugin file to the segments from tmp
@@ -243,7 +246,7 @@ func (plugin *PluginConfig) CopyPluginConfigToAllHosts(c *cluster.Cluster, confi
 		func(contentID int) string {
 			return fmt.Sprintf("scp %s %s:/tmp/.", masterTmpConfigPath, c.GetHostForContent(contentID))
 		},
-		cluster.ON_MASTER_TO_HOSTS)
+		cluster.ON_MASTER_TO_HOSTS_AND_MASTER)
 	c.CheckClusterError(remoteOutput, "Unable to copy plugin config", func(contentID int) string {
 		return "Unable to copy plugin config"
 	})
