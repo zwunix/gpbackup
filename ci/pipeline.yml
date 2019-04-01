@@ -1040,6 +1040,11 @@ jobs:
               rm workspace/files-to-upload/gpbackup_version
               rm workspace/files-to-upload/ddboost_plugin_version
               rm workspace/files-to-upload/s3_plugin_version
+
+              # REVERT ME: remove files with versions that did not change
+              mv workspace/files-to-upload/*s3* workspace/
+              mv workspace/files-to-upload/*ddboost* workspace/
+
               ls -l workspace/files-to-upload
 
     - put: pivnet-gpbackup
