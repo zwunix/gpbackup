@@ -1036,6 +1036,10 @@ jobs:
 
               cat workspace/metadata.yml
 
+              # remove 'version' text files prior to pivnet upload
+              rm workspace/files-to-upload/gpbackup_version
+              rm workspace/files-to-upload/ddboost_plugin_version
+              rm workspace/files-to-upload/s3_plugin_version
               ls -l workspace/files-to-upload
 
     - put: pivnet-gpbackup
