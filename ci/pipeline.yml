@@ -23,19 +23,11 @@ resource_types:
     tag: latest-final
 
 resources:
-- name: nightly-trigger
-  type: time
-  source:
-    location: America/Los_Angeles
-    days: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday]
-    start: 6:00 AM
-    stop: 7:00 AM
-
 - name: gpbackup
   type: git
   source:
     uri: https://github.com/greenplum-db/gpbackup
-    branch: {{gpbackup-git-branch}}
+    branch: 1.10.0-pivnet
 
 - name: gpbackup_s3_plugin
   type: git
@@ -55,7 +47,7 @@ resources:
   source:
     branch: master
     uri: https://github.com/greenplum-db/gpbackup
-    tag_filter: 1.*
+    tag_filter: 1.10.0
 
 - name: gpbackup_s3_plugin_tagged_src
   type: git
@@ -269,8 +261,6 @@ jobs:
     - get: gpbackup
       trigger: true
     - get: gpbackup-dependencies
-    - get: nightly-trigger
-      trigger: true
   - task: build-dependencies
     file: gpbackup/ci/tasks/build-dependencies.yml
     attempts: 5
@@ -282,8 +272,6 @@ jobs:
   plan:
   - aggregate:
     - get: gpbackup
-      trigger: true
-    - get: nightly-trigger
       trigger: true
     - get: gpbackup-dependencies
       passed:
@@ -303,8 +291,6 @@ jobs:
     - get: ccp_src
     - get: gpdb5_src
     - get: bin_gpdb_5x_stable
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -402,8 +388,6 @@ jobs:
       tags: ["ddboost"]
     - get: boostfs_installer
       tags: ["ddboost"]
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       tags: ["ddboost"]
       passed:
@@ -591,8 +575,6 @@ jobs:
     - get: bin_gpdb_5x_stable
     - get: ccp_src
     - get: gpdb5_src
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -630,8 +612,6 @@ jobs:
     - get: bin_gpdb_5x_stable_centos7
     - get: ccp_src
     - get: gpdb5_src
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -678,8 +658,6 @@ jobs:
     - get: ccp_src
     - get: gpdb5_src
     - get: dummy_seclabel
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -716,8 +694,6 @@ jobs:
     - get: bin_gpdb_5x_stable
     - get: ccp_src
     - get: gpdb5_src
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -754,8 +730,6 @@ jobs:
     - get: bin_gpdb_43_stable
     - get: ccp_src
     - get: gpdb5_src
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -792,8 +766,6 @@ jobs:
     - get: bin_gpdb_5x_stable
     - get: ccp_src
     - get: gpdb5_src
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -836,8 +808,6 @@ jobs:
     - get: ccp_src
     - get: gpdb5_src
     - get: scale_schema
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -876,8 +846,6 @@ jobs:
     - get: ccp_src
     - get: gpdb5_src
     - get: scale_schema
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -915,8 +883,6 @@ jobs:
     - get: ccp_src
     - get: gpdb5_src
     - get: scale_schema
-    - get: nightly-trigger
-      trigger: true
     - get: gpbackup-dependencies
       passed:
        - build_dependencies
@@ -956,16 +922,6 @@ jobs:
     # While the resource is not used, it ensures only releasing if
     # tests are passing
     - get: gpbackup
-      passed:
-        - units
-        - integrations-GPDB5
-        - integrations-GPDB4.3
-        - integrations-GPDB5-sles
-        - integrations-GPDB5-oracle7
-        - integrations-master
-        - integrations-backward-compatibility
-        - s3_plugin_tests
-        - ddboost_plugin_and_boostfs_tests
     - get: gpdb6_src
     - get: bin_gpdb6
     - get: gpbackup-dependencies
