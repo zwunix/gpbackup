@@ -247,7 +247,7 @@ resources:
     region: ((pivnet_aws_region))
     sort_by: semver
 
-- name: gpbackup-release-license
+- name: gpbackup-release-license-UPDATE
   type: gcs
   source:
     bucket: gpbackup-release-licenses
@@ -989,7 +989,7 @@ jobs:
         passed: [package_gpbackup_for_release]
       - get: gpbackup
         passed: [package_gpbackup_for_release]
-      - get: gpbackup-release-license
+      - get: gpbackup-release-license-UPDATE
     - task: update metadata.yml
       config:
         platform: linux
@@ -1000,7 +1000,7 @@ jobs:
         inputs:
           - name: gppkgs
           - name: gpbackup
-          - name: gpbackup-release-license
+          - name: gpbackup-release-license-UPDATE
         outputs:
           - name: workspace
         run:
@@ -1016,11 +1016,11 @@ jobs:
 
               RELEASE_VERSION=$(cat workspace/files-to-upload/gpbackup_version)
 
-              if [ ! -f gpbackup-release-license/gpbackup-osl-v${RELEASE_VERSION}.txt ] ; then
+              if [ ! -f gpbackup-release-license-UPDATE/gpbackup-osl-v${RELEASE_VERSION}.txt ] ; then
                 echo "License file gpbackup-osl-v${RELEASE_VERSION}.txt does not exist in resource.\n Ensure the OSL is properly uploaded to the GCS bucket prior to pushing to pivnet." 1>&2
                 exit 1
               fi
-              cp gpbackup-release-license/gpbackup-osl-v${RELEASE_VERSION}.txt workspace/files-to-upload/
+              cp gpbackup-release-license-UPDATE/gpbackup-osl-v${RELEASE_VERSION}.txt workspace/files-to-upload/
 
               # TODO: currently, <VERSION> corresponds only with the tile release version. This poses an issue when we have a unique version upgrade for a plugin (which is included in this tile), but gpbackup remains the same. The division of releases and versioning is a product decision.
               sed -i "s/<VERSION>/${RELEASE_VERSION}/g" workspace/metadata.yml
