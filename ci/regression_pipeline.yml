@@ -159,7 +159,7 @@ jobs:
       sqldump: icw_gporca_centos6_dump
   - put: backup_artifact_resource
     params:
-      file: artifacts/gpbackup_all.tar.gz
+      file: artifacts/gpbackup_regression_data.tar.gz
   - put: regression_dump
     params:
       file: artifacts/regression_dump.sql.xz

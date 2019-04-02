@@ -1,12 +1,24 @@
 #!/usr/bin/env bash
 
 set -ex
-source env.sh
+source /usr/local/greenplum-db-devel/greenplum_path.sh
+source gpdb_src/gpAux/gpdemo/gpdemo-env.sh
 
-mkdir /tmp/backup_artifact # parent dir for all backups
+
+# install gpbackup
+export GOPATH=$(pwd)/go
+export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
+
+pushd $GOPATH/src/github.com/greenplum-db/gpbackup
+  make depend
+  make build
+  version=`git describe --tags | perl -pe 's/(.*)-([0-9]*)-(g[0-9a-f]*)/\1+dev.\2.\3/'`
+popd
+
+mkdir -p /tmp/backup_artifact # parent dir for all backups
 
 echo "##### Loading sqldump into DB #####"
-psql -d postgres -f /home/gpadmin/sqldump/dump.sql >/dev/null
+psql -d postgres -f ./sqldump/dump.sql >/dev/null
 
 echo "##### Running pg_dump on regression DB #####"
 pg_dump regression -f /tmp/regression_dump.sql --schema-only

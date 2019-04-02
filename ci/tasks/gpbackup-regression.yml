@@ -36,16 +36,14 @@ run:
     source /usr/local/greenplum-db-devel/greenplum_path.sh
     source /opt/gcc_env.sh
     source gpdb_src/gpAux/gpdemo/gpdemo-env.sh
+
+    xz -d ./sqldump/dump.sql.xz
+
+    chown gpadmin:gpadmin -R $(pwd)/go
+
     sudo -u gpadmin go/src/github.com/greenplum-db/gpbackup/ci/scripts/generate_backup_artifact.bash
 
-    # scp mdw:/tmp/regression_dump.sql.xz  artifacts/
+    cp /tmp/regression_dump.sql.xz  artifacts/.
+    cp /tmp/backup_artifact.tar.gz artifacts/.
 
-    exit 1
-    # combine gpbackup's separate tarballs for master and segments
-    ssh -t sdw1 "pushd /tmp ; tar czvf backup_artifact.tar.gz backup_artifact ; popd"
-    mkdir /tmp/gpbackup_allsegments
-    scp mdw:/tmp/backup_artifact.tar.gz  /tmp/gpbackup_allsegments/gpbackup_mdw.tar.gz
-    scp sdw1:/tmp/backup_artifact.tar.gz /tmp/gpbackup_allsegments/gpbackup_sdw1.tar.gz
-
-    tar czvf artifacts/gpbackup_all.tar.gz -C /tmp/ gpbackup_allsegments
-
+    tar czvf artifacts/gpbackup_regression_data.tar.gz -C artifacts/
