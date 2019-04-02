@@ -142,8 +142,10 @@ func RecoverMetadataFilesUsingPlugin() {
 	var err error
 	pluginConfig, err = utils.ReadPluginConfig(MustGetFlagString(utils.PLUGIN_CONFIG))
 	gplog.FatalOnError(err)
-	pluginConfig.BackupPluginVersion = pluginConfig.CheckPluginExistsOnAllHosts(globalCluster)
 
+	// todo
+	// pluginConfig.BackupPluginVersion = history.getBackupFromTimestamp(timestamp).PluginVersion
+	pluginConfig.CheckPluginExistsOnAllHosts(globalCluster)
 	pluginConfig.CopyPluginConfigToAllHosts(globalCluster, MustGetFlagString(utils.PLUGIN_CONFIG))
 	pluginConfig.SetupPluginForRestore(globalCluster, globalFPInfo)
 
